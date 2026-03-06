@@ -9,7 +9,7 @@
     <link
         href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap"
         rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
 
     <style>
         /* ═══════════════════════════════════════════
@@ -24,30 +24,21 @@
         }
 
         :root {
-            /* Cores base */
             --bg: #F8FAFC;
             --surface: #FFFFFF;
             --surface-2: #F1F5F9;
             --border: #E2E8F0;
             --border-focus: #0EA5E9;
-
-            /* Texto */
             --text-primary: #0F172A;
             --text-secondary: #475569;
             --text-muted: #94A3B8;
-
-            /* Acento médico */
             --accent: #0EA5E9;
             --accent-soft: #E0F2FE;
             --accent-dark: #0369A1;
-
-            /* Gravidade */
             --severity-contraindicated: #DC2626;
             --severity-major: #EA580C;
             --severity-moderate: #D97706;
             --severity-minor: #65A30D;
-
-            /* Badges soft */
             --badge-contra-bg: #FEF2F2;
             --badge-contra-text: #991B1B;
             --badge-major-bg: #FFF7ED;
@@ -56,16 +47,12 @@
             --badge-moderate-text: #92400E;
             --badge-minor-bg: #F0FDF4;
             --badge-minor-text: #166534;
-
-            /* Layout */
             --panel-width: 400px;
             --header-h: 68px;
             --radius: 12px;
             --radius-sm: 8px;
             --shadow: 0 1px 3px rgba(15, 23, 42, .08), 0 4px 16px rgba(15, 23, 42, .06);
             --shadow-lg: 0 8px 32px rgba(15, 23, 42, .12), 0 2px 8px rgba(15, 23, 42, .06);
-
-            /* Animações */
             --ease: cubic-bezier(.22, .68, 0, 1.2);
         }
 
@@ -260,7 +247,6 @@
             cursor: not-allowed;
         }
 
-        /* Autocomplete dropdown */
         .autocomplete-list {
             position: absolute;
             top: calc(100% + 6px);
@@ -310,7 +296,6 @@
             margin-left: auto;
         }
 
-        /* Tags de medicamentos */
         .tags-row {
             display: flex;
             flex-wrap: wrap;
@@ -336,12 +321,12 @@
         @keyframes tagIn {
             from {
                 opacity: 0;
-                transform: scale(.85) translateY(4px);
+                transform: scale(.85) translateY(4px)
             }
 
             to {
                 opacity: 1;
-                transform: scale(1) translateY(0);
+                transform: scale(1) translateY(0)
             }
         }
 
@@ -365,7 +350,6 @@
             color: #DC2626;
         }
 
-        /* Counter + Analyze button */
         .search-footer {
             display: flex;
             align-items: center;
@@ -427,15 +411,6 @@
 
         .analyze-btn:not(:disabled):active {
             transform: scale(.97);
-        }
-
-        /* ═══════════════════════════════════════════
-       CONTENT GRID
-    ═══════════════════════════════════════════ */
-        .content-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 24px;
         }
 
         /* ═══════════════════════════════════════════
@@ -511,6 +486,7 @@
             background: var(--accent-soft);
         }
 
+        /* Container D3 */
         #cy-container {
             width: 100%;
             height: 68vh;
@@ -521,10 +497,15 @@
                 radial-gradient(ellipse at 72% 66%, rgba(139, 92, 246, .06) 0%, transparent 48%),
                 radial-gradient(ellipse at 55% 20%, rgba(220, 38, 38, .05) 0%, transparent 45%);
             position: relative;
-            border-radius: 0 0 var(--radius) var(--radius);
         }
 
-        /* Empty state adaptado para fundo escuro */
+        #graph-svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: default;
+        }
+
         .graph-empty {
             position: absolute;
             inset: 0;
@@ -533,7 +514,6 @@
             align-items: center;
             justify-content: center;
             gap: 12px;
-            color: rgba(255, 255, 255, .25);
             pointer-events: none;
         }
 
@@ -553,7 +533,6 @@
             color: rgba(255, 255, 255, .2);
         }
 
-        /* Legenda — glass escuro */
         .legend {
             position: absolute;
             bottom: 16px;
@@ -597,7 +576,7 @@
         }
 
         /* ═══════════════════════════════════════════
-       BODY MAP — SVG ANATÔMICO
+       BODY MAP
     ═══════════════════════════════════════════ */
         .body-map-card {
             background: var(--surface);
@@ -609,8 +588,7 @@
 
         .body-map-content {
             display: grid;
-            grid-template-columns: 260px 1fr;
-            gap: 0;
+            grid-template-columns: 1fr 240px;
             min-height: 420px;
         }
 
@@ -618,106 +596,159 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 24px 16px;
-            background: #F8FAFC;
+            padding: 24px 12px;
+            background: linear-gradient(160deg, #F8FAFC 0%, #EFF6FF 100%);
             border-right: 1px solid var(--border);
         }
 
         #body-svg {
-            width: 180px;
-            height: auto;
+            width: 100%;
+            max-width: 480px;
+            max-height: 400px;
             overflow: visible;
         }
 
-        /* Órgãos SVG — estados */
-        .organ-shape {
-            cursor: pointer;
-            transition: filter .2s, opacity .2s;
-        }
-
-        .organ-shape:hover {
-            filter: brightness(1.25);
-        }
-
-        .organ-shape.risk-none {
-            fill: #CBD5E1;
-            opacity: .5;
-        }
-
-        .organ-shape.risk-minor {
-            fill: #4ADE80;
-            opacity: .75;
-            filter: drop-shadow(0 0 5px rgba(74, 222, 128, .5));
-        }
-
-        .organ-shape.risk-moderate {
-            fill: #FBBF24;
-            opacity: .85;
-            filter: drop-shadow(0 0 7px rgba(251, 191, 36, .55));
-            animation: organ-pulse-mod 2.2s ease-in-out infinite;
-        }
-
-        .organ-shape.risk-major {
-            fill: #F97316;
-            opacity: .9;
-            filter: drop-shadow(0 0 9px rgba(249, 115, 22, .65));
-            animation: organ-pulse-major 1.8s ease-in-out infinite;
-        }
-
-        .organ-shape.risk-contraindicated {
-            fill: #EF4444;
-            opacity: 1;
-            filter: drop-shadow(0 0 12px rgba(239, 68, 68, .8));
-            animation: organ-pulse-contra 1.4s ease-in-out infinite;
-        }
-
-        @keyframes organ-pulse-mod {
-
-            0%,
-            100% {
-                filter: drop-shadow(0 0 5px rgba(251, 191, 36, .4));
-            }
-
-            50% {
-                filter: drop-shadow(0 0 12px rgba(251, 191, 36, .75));
-            }
-        }
-
-        @keyframes organ-pulse-major {
-
-            0%,
-            100% {
-                filter: drop-shadow(0 0 7px rgba(249, 115, 22, .5));
-            }
-
-            50% {
-                filter: drop-shadow(0 0 16px rgba(249, 115, 22, .85));
-            }
-        }
-
-        @keyframes organ-pulse-contra {
-
-            0%,
-            100% {
-                filter: drop-shadow(0 0 8px rgba(239, 68, 68, .6));
-            }
-
-            50% {
-                filter: drop-shadow(0 0 20px rgba(239, 68, 68, 1));
-            }
-        }
-
-        /* Silhueta do corpo */
         .body-silhouette {
-            fill: #E2E8F0;
+            fill: #EEF2F7;
+            stroke: #C8D4E3;
+            stroke-width: 1.5;
         }
 
-        /* Painel de legenda lateral */
+        .organ-shape {
+            fill: rgba(203, 213, 225, .5);
+            stroke: #94A3B8;
+            stroke-width: 1;
+            transition: fill .35s ease, stroke .35s ease, filter .35s ease;
+        }
+
+        .organ-trachea {
+            fill: rgba(203, 213, 225, .4) !important;
+            stroke: #94A3B8;
+        }
+
+        .organ-detail {
+            stroke: rgba(0, 0, 0, .15);
+            stroke-width: 1;
+        }
+
+        .organ-group {
+            cursor: pointer;
+        }
+
+        .organ-group:hover .organ-shape {
+            stroke-width: 2;
+            filter: brightness(1.12) saturate(1.15);
+        }
+
+        .organ-group:focus {
+            outline: none;
+        }
+
+        .organ-group:focus-visible .organ-shape {
+            stroke-width: 2.5;
+            stroke: #0EA5E9;
+        }
+
+        .organ-group[data-risk="contraindicated"] .organ-shape:not(.organ-trachea) {
+            fill: rgba(220, 38, 38, .82);
+            stroke: #FF4444;
+        }
+
+        .organ-group[data-risk="major"] .organ-shape:not(.organ-trachea) {
+            fill: rgba(234, 88, 12, .78);
+            stroke: #FF7733;
+        }
+
+        .organ-group[data-risk="moderate"] .organ-shape:not(.organ-trachea) {
+            fill: rgba(217, 119, 6, .72);
+            stroke: #FFAA33;
+        }
+
+        .organ-group[data-risk="minor"] .organ-shape:not(.organ-trachea) {
+            fill: rgba(101, 163, 13, .68);
+            stroke: #88CC22;
+        }
+
+        @keyframes pulse-contra {
+
+            0%,
+            100% {
+                filter: drop-shadow(0 0 4px rgba(220, 38, 38, .5))
+            }
+
+            50% {
+                filter: drop-shadow(0 0 14px rgba(220, 38, 38, .95))
+            }
+        }
+
+        @keyframes pulse-major {
+
+            0%,
+            100% {
+                filter: drop-shadow(0 0 3px rgba(234, 88, 12, .45))
+            }
+
+            50% {
+                filter: drop-shadow(0 0 11px rgba(234, 88, 12, .85))
+            }
+        }
+
+        @keyframes pulse-moderate {
+
+            0%,
+            100% {
+                filter: drop-shadow(0 0 3px rgba(217, 119, 6, .4))
+            }
+
+            50% {
+                filter: drop-shadow(0 0 9px rgba(217, 119, 6, .75))
+            }
+        }
+
+        .organ-group[data-risk="contraindicated"] {
+            animation: pulse-contra 1.5s ease-in-out infinite;
+        }
+
+        .organ-group[data-risk="major"] {
+            animation: pulse-major 1.9s ease-in-out infinite;
+        }
+
+        .organ-group[data-risk="moderate"] {
+            animation: pulse-moderate 2.4s ease-in-out infinite;
+        }
+
+        .organ-lbl {
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 9px;
+            font-weight: 700;
+            fill: #94A3B8;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            pointer-events: none;
+            transition: fill .35s;
+        }
+
+        .ll {
+            stroke: #CBD5E1;
+            stroke-width: .8;
+            opacity: .65;
+        }
+
+        .ll-dot {
+            fill: #CBD5E1;
+        }
+
+        .sev-dot {
+            fill: #CBD5E1;
+            opacity: .4;
+            transition: fill .35s, opacity .35s;
+        }
+
         .organ-legend-panel {
-            padding: 20px 24px;
+            padding: 20px 18px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
             overflow-y: auto;
         }
 
@@ -734,7 +765,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 8px 12px;
+            padding: 8px 10px;
             border-radius: 8px;
             cursor: pointer;
             transition: background .15s;
@@ -747,30 +778,30 @@
         }
 
         .organ-dot {
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             flex-shrink: 0;
             background: #CBD5E1;
             transition: background .3s, box-shadow .3s;
         }
 
-        .organ-legend-item .organ-label {
-            font-size: .85rem;
+        .organ-legend-item .organ-label-text {
+            font-size: .82rem;
             font-weight: 600;
             color: var(--text-secondary);
             flex: 1;
         }
 
         .organ-risk-tag {
-            font-size: .7rem;
+            font-size: .68rem;
             font-weight: 700;
-            padding: 2px 8px;
+            padding: 2px 7px;
             border-radius: 20px;
             letter-spacing: .03em;
         }
 
-        @media (max-width: 700px) {
+        @media(max-width:700px) {
             .body-map-content {
                 grid-template-columns: 1fr;
             }
@@ -778,11 +809,11 @@
             .body-svg-wrap {
                 border-right: none;
                 border-bottom: 1px solid var(--border);
-                padding: 20px;
+                padding: 16px;
             }
 
-            #body-svg {
-                width: 130px;
+            .organ-legend-panel {
+                padding: 14px;
             }
         }
 
@@ -1016,7 +1047,6 @@
             border: 1px solid rgba(14, 165, 233, .2);
         }
 
-        /* Panel para órgão */
         .organ-panel-list {
             display: flex;
             flex-direction: column;
@@ -1044,49 +1074,11 @@
         }
 
         /* ═══════════════════════════════════════════
-       ARIA / SR-ONLY
+       TOOLTIP D3
     ═══════════════════════════════════════════ */
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
-        }
-
-        /* ═══════════════════════════════════════════
-       RESPONSIVE
-    ═══════════════════════════════════════════ */
-        @media (max-width: 640px) {
-            main {
-                padding: 16px;
-            }
-
-            .search-row {
-                flex-direction: column;
-            }
-
-            .add-btn {
-                width: 100%;
-                justify-content: center;
-            }
-
-            :root {
-                --panel-width: 100vw;
-            }
-
-            .body-map-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-
-        /* Tooltip custom — dark glass */
         .cy-tooltip {
             position: fixed;
+            pointer-events: none;
             background: rgba(10, 14, 20, .94);
             border: 1px solid rgba(255, 255, 255, .1);
             color: #E2E8F0;
@@ -1094,7 +1086,6 @@
             padding: 9px 13px;
             font-size: .8rem;
             line-height: 1.55;
-            pointer-events: none;
             z-index: 600;
             max-width: 230px;
             box-shadow: 0 8px 28px rgba(0, 0, 0, .55);
@@ -1125,7 +1116,21 @@
             font-size: .73rem;
         }
 
-        /* Scrollbar personalizada */
+        /* ═══════════════════════════════════════════
+       MISC
+    ═══════════════════════════════════════════ */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
         .panel-body::-webkit-scrollbar {
             width: 4px;
         }
@@ -1139,11 +1144,28 @@
             border-radius: 4px;
         }
 
-        /* Separador gradiente */
         .gradient-divider {
             height: 1px;
             background: linear-gradient(to right, transparent, var(--border) 20%, var(--border) 80%, transparent);
-            margin: 0;
+        }
+
+        @media(max-width:640px) {
+            main {
+                padding: 16px;
+            }
+
+            .search-row {
+                flex-direction: column;
+            }
+
+            .add-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            :root {
+                --panel-width: 100vw;
+            }
         }
     </style>
 </head>
@@ -1151,12 +1173,11 @@
 <body>
 
     <!-- ═══════════════════════════════════
-       HEADER
-  ═══════════════════════════════════ -->
+     HEADER
+═══════════════════════════════════ -->
     <header role="banner">
         <div class="logo">
             <div class="logo-mark" aria-hidden="true">
-                <!-- pill + network icon -->
                 <svg viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round">
                     <circle cx="10" cy="10" r="3" />
                     <line x1="10" y1="3" x2="10" y2="7" />
@@ -1176,30 +1197,25 @@
     </header>
 
     <!-- ═══════════════════════════════════
-       MAIN
-  ═══════════════════════════════════ -->
+     MAIN
+═══════════════════════════════════ -->
     <main>
 
         <!-- SEARCH SECTION -->
         <section class="search-section" aria-label="Adicionar medicamentos">
             <label class="search-label" for="drug-input">Medicamentos para análise</label>
-
             <div class="search-row">
                 <div class="search-wrapper">
-                    <!-- Search icon -->
                     <svg class="search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
                         <circle cx="8.5" cy="8.5" r="5.5" />
                         <path d="M13.5 13.5 L18 18" stroke-linecap="round" />
                     </svg>
-
                     <input type="text" id="drug-input" autocomplete="off" placeholder="Digite o nome do medicamento..."
                         aria-label="Buscar medicamento" aria-autocomplete="list" aria-controls="autocomplete-listbox"
                         aria-activedescendant="">
-
                     <div id="autocomplete-listbox" class="autocomplete-list" role="listbox"
                         aria-label="Sugestões de medicamentos"></div>
                 </div>
-
                 <button class="add-btn" id="add-btn" aria-label="Adicionar medicamento">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2"
                         stroke-linecap="round">
@@ -1210,20 +1226,16 @@
                 </button>
             </div>
 
-            <!-- Drug tags -->
             <div id="tags-row" class="tags-row" role="list" aria-label="Medicamentos adicionados"></div>
 
-            <!-- Footer com counter e botão analisar -->
             <div class="search-footer">
                 <div class="counter" aria-live="polite" aria-atomic="true" id="counter">
                     <span class="count-badge" id="drug-count">0</span>
                     <span id="drug-count-label">medicamentos</span>
                     <span id="interaction-count-section" style="display:none">
-                        ·
-                        <span class="inter-badge" id="interaction-badge">0 interações</span>
+                        · <span class="inter-badge" id="interaction-badge">0 interações</span>
                     </span>
                 </div>
-
                 <button class="analyze-btn" id="analyze-btn" disabled aria-label="Analisar interações">
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
@@ -1232,8 +1244,6 @@
                     Analisar
                 </button>
             </div>
-
-            <!-- SR live region -->
             <div id="sr-live" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
         </section>
 
@@ -1257,9 +1267,8 @@
                     </div>
                     Grafo de Interações
                 </div>
-
-                <div class="graph-controls" role="group" aria-label="Layout do grafo">
-                    <button class="ctrl-btn active" id="layout-cose" data-layout="cose">
+                <div class="graph-controls" role="group" aria-label="Controles do grafo">
+                    <button class="ctrl-btn active" id="layout-force" data-layout="force">
                         <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor"
                             stroke-width="1.8">
                             <circle cx="5.5" cy="5.5" r="4.5" />
@@ -1268,15 +1277,64 @@
                         </svg>
                         Force
                     </button>
-                    <button class="ctrl-btn" id="layout-circle" data-layout="circle">Circular</button>
+                    <button class="ctrl-btn" id="layout-radial" data-layout="radial">Radial</button>
                     <button class="ctrl-btn" id="layout-grid" data-layout="grid">Grid</button>
-                    <button class="ctrl-btn" id="reset-view-btn">Reset</button>
+                    <button class="ctrl-btn" id="reset-view-btn">⟳ Reset</button>
                 </div>
             </div>
 
             <div style="position:relative;">
-                <!-- Cytoscape container -->
-                <div id="cy-container" role="img" aria-label="Grafo de interações medicamentosas"></div>
+                <div id="cy-container" role="img" aria-label="Grafo de interações medicamentosas">
+                    <svg id="graph-svg">
+                        <defs>
+                            <!-- Glow filters por severidade -->
+                            <filter id="gf-contra" x="-80%" y="-80%" width="260%" height="260%">
+                                <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b" />
+                                <feMerge>
+                                    <feMergeNode in="b" />
+                                    <feMergeNode in="SourceGraphic" />
+                                </feMerge>
+                            </filter>
+                            <filter id="gf-major" x="-80%" y="-80%" width="260%" height="260%">
+                                <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="b" />
+                                <feMerge>
+                                    <feMergeNode in="b" />
+                                    <feMergeNode in="SourceGraphic" />
+                                </feMerge>
+                            </filter>
+                            <filter id="gf-moderate" x="-70%" y="-70%" width="240%" height="240%">
+                                <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="b" />
+                                <feMerge>
+                                    <feMergeNode in="b" />
+                                    <feMergeNode in="SourceGraphic" />
+                                </feMerge>
+                            </filter>
+                            <filter id="gf-minor" x="-70%" y="-70%" width="240%" height="240%">
+                                <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="b" />
+                                <feMerge>
+                                    <feMergeNode in="b" />
+                                    <feMergeNode in="SourceGraphic" />
+                                </feMerge>
+                            </filter>
+                            <!-- Label outline -->
+                            <filter id="gf-label">
+                                <feMorphology in="SourceAlpha" operator="dilate" radius="2.5" result="e" />
+                                <feFlood flood-color="#0D1117" flood-opacity="1" result="c" />
+                                <feComposite in="c" in2="e" operator="in" result="outline" />
+                                <feMerge>
+                                    <feMergeNode in="outline" />
+                                    <feMergeNode in="SourceGraphic" />
+                                </feMerge>
+                            </filter>
+                        </defs>
+                        <!-- Layer order: safe links → real links → halos → nodes → labels -->
+                        <g id="g-safe-links"></g>
+                        <g id="g-links"></g>
+                        <g id="g-halos"></g>
+                        <g id="g-nodes"></g>
+                        <g id="g-labels"></g>
+                    </svg>
+                </div>
 
                 <!-- Empty state -->
                 <div class="graph-empty" id="graph-empty">
@@ -1300,30 +1358,26 @@
                     <div class="legend-title">Interações</div>
                     <div class="legend-items">
                         <div class="legend-item">
-                            <div class="legend-line"
-                                style="background:#FF3333; height:3px; box-shadow:0 0 6px #FF3333;"></div>
-                            Contraindicado
+                            <div class="legend-line" style="background:#FF3333;height:3px;box-shadow:0 0 6px #FF3333;">
+                            </div>Contraindicado
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-line" style="background:#FF7733;height:2px;box-shadow:0 0 5px #FF7733;">
+                            </div>Maior
                         </div>
                         <div class="legend-item">
                             <div class="legend-line"
-                                style="background:#FF7733; height:2px; box-shadow:0 0 5px #FF7733;"></div>
-                            Maior
+                                style="height:2px;background-image:repeating-linear-gradient(to right,#FFBB33,#FFBB33 7px,transparent 7px,transparent 13px);">
+                            </div>Moderado
                         </div>
                         <div class="legend-item">
                             <div class="legend-line"
-                                style="height:2px; background-image: repeating-linear-gradient(to right, #FFBB33, #FFBB33 7px, transparent 7px, transparent 13px);">
-                            </div>
-                            Moderado
+                                style="height:2px;background-image:repeating-linear-gradient(to right,#77CC33,#77CC33 3px,transparent 3px,transparent 7px);">
+                            </div>Menor
                         </div>
                         <div class="legend-item">
-                            <div class="legend-line"
-                                style="height:2px; background-image: repeating-linear-gradient(to right, #77CC33, #77CC33 3px, transparent 3px, transparent 7px);">
-                            </div>
-                            Menor
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-line" style="background:#1E3A5F; height:1px; opacity:.7;"></div>
-                            Sem interação
+                            <div class="legend-line" style="background:#1E3A5F;height:1px;opacity:.7;"></div>Sem
+                            interação
                         </div>
                     </div>
                 </div>
@@ -1346,140 +1400,129 @@
             </div>
 
             <div class="body-map-content">
-
-                <!-- SVG do corpo humano -->
                 <div class="body-svg-wrap">
-                    <svg id="body-svg" viewBox="0 0 160 400" xmlns="http://www.w3.org/2000/svg"
+                    <svg id="body-svg" viewBox="0 0 400 440" xmlns="http://www.w3.org/2000/svg"
                         aria-label="Mapa corporal interativo">
+                        <defs>
+                            <filter id="glow-contra" x="-50%" y="-50%" width="200%" height="200%">
+                                <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
+                                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                            </filter>
+                            <filter id="glow-major" x="-40%" y="-40%" width="180%" height="180%">
+                                <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
+                                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                            </filter>
+                            <filter id="glow-mod" x="-30%" y="-30%" width="160%" height="160%">
+                                <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+                                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                            </filter>
+                        </defs>
 
-                        <!-- ── SILHUETA ─────────────────────────── -->
-                        <!-- Cabeça -->
-                        <ellipse cx="80" cy="28" rx="22" ry="24" class="body-silhouette" />
-                        <!-- Pescoço -->
-                        <rect x="73" y="50" width="14" height="14" rx="2" class="body-silhouette" />
-                        <!-- Tronco -->
-                        <path
-                            d="M44 64 C38 64 32 72 32 82 L32 200 C32 208 38 214 46 214 L114 214 C122 214 128 208 128 200 L128 82 C128 72 122 64 116 64 Z"
-                            class="body-silhouette" />
-                        <!-- Braço esquerdo -->
-                        <path d="M32 72 C26 72 20 78 18 86 L12 148 C10 156 14 162 20 162 L28 162 L36 102 Z"
-                            class="body-silhouette" />
-                        <!-- Braço direito -->
-                        <path d="M128 72 C134 72 140 78 142 86 L148 148 C150 156 146 162 140 162 L132 162 L124 102 Z"
-                            class="body-silhouette" />
-                        <!-- Pelvis -->
-                        <path d="M46 214 L38 252 L56 252 L62 230 L98 230 L104 252 L122 252 L114 214 Z"
-                            class="body-silhouette" />
-                        <!-- Perna esquerda -->
-                        <path d="M38 252 L32 330 C30 340 34 350 42 352 L52 352 L60 260 Z" class="body-silhouette" />
-                        <!-- Perna direita -->
-                        <path d="M122 252 L128 330 C130 340 126 350 118 352 L108 352 L100 260 Z"
-                            class="body-silhouette" />
+                        <!-- SILHUETA -->
+                        <ellipse class="body-silhouette" cx="200" cy="52" rx="36" ry="42" />
+                        <rect class="body-silhouette" x="188" y="91" width="24" height="22" rx="5" />
+                        <path class="body-silhouette"
+                            d="M136,113 L264,113 L266,120 Q268,160 268,200 Q268,260 260,302 L140,302 Q132,260 132,200 Q132,160 134,120 Z" />
+                        <path class="body-silhouette"
+                            d="M136,118 L108,114 L92,202 L92,232 L108,234 L120,192 L136,156 Z" />
+                        <path class="body-silhouette"
+                            d="M264,118 L292,114 L308,202 L308,232 L292,234 L280,192 L264,156 Z" />
+                        <path class="body-silhouette"
+                            d="M140,302 L148,430 L172,430 L176,320 L200,316 L224,320 L228,430 L252,430 L260,302 Z" />
 
-                        <!-- ── ÓRGÃOS (clicáveis) ─────────────────── -->
+                        <!-- LINHAS DE REFERÊNCIA -->
+                        <line class="ll" x1="176" y1="52" x2="106" y2="52" />
+                        <line class="ll" x1="148" y1="154" x2="106" y2="154" />
+                        <line class="ll" x1="153" y1="220" x2="106" y2="220" />
+                        <line class="ll" x1="166" y1="285" x2="106" y2="285" />
+                        <line class="ll" x1="222" y1="167" x2="294" y2="167" />
+                        <line class="ll" x1="250" y1="210" x2="294" y2="210" />
+                        <line class="ll" x1="207" y1="229" x2="294" y2="229" />
+                        <circle class="ll-dot" cx="106" cy="52" r="2.5" />
+                        <circle class="ll-dot" cx="106" cy="154" r="2.5" />
+                        <circle class="ll-dot" cx="106" cy="220" r="2.5" />
+                        <circle class="ll-dot" cx="106" cy="285" r="2.5" />
+                        <circle class="ll-dot" cx="294" cy="167" r="2.5" />
+                        <circle class="ll-dot" cx="294" cy="210" r="2.5" />
+                        <circle class="ll-dot" cx="294" cy="229" r="2.5" />
 
-                        <!-- Cérebro / SNC -->
-                        <g id="organ-snc" class="organ-shape risk-none" role="button" tabindex="0"
+                        <!-- ÓRGÃOS -->
+                        <g data-organ="snc" class="organ-group" role="button" tabindex="0"
                             aria-label="Sistema Nervoso Central">
-                            <ellipse cx="80" cy="24" rx="14" ry="13" />
-                            <!-- sulcos cerebrais decorativos -->
-                            <path d="M70 20 Q76 16 80 20 Q84 16 90 20" fill="none" stroke="rgba(0,0,0,.2)"
-                                stroke-width="1" stroke-linecap="round" />
-                            <path d="M68 26 Q74 22 80 26 Q86 22 92 26" fill="none" stroke="rgba(0,0,0,.2)"
-                                stroke-width="1" stroke-linecap="round" />
+                            <title>Sistema Nervoso Central — clique para detalhes</title>
+                            <ellipse class="organ-shape" cx="200" cy="50" rx="23" ry="27" />
+                            <path class="organ-detail" d="M190,40 Q196,45 191,51 Q187,57 193,61" fill="none"
+                                stroke-linecap="round" />
+                            <path class="organ-detail" d="M200,38 Q207,44 202,51 Q198,57 205,61" fill="none"
+                                stroke-linecap="round" />
                         </g>
-
-                        <!-- Pulmões -->
-                        <g id="organ-respiratorio" class="organ-shape risk-none" role="button" tabindex="0"
+                        <g data-organ="respiratorio" class="organ-group" role="button" tabindex="0"
                             aria-label="Sistema Respiratório">
-                            <!-- Pulmão esquerdo -->
-                            <path d="M50 80 C44 80 40 86 40 94 L40 128 C40 136 46 142 54 140 L66 136 L66 80 Z" />
-                            <!-- Pulmão direito -->
-                            <path
-                                d="M110 80 C116 80 120 86 120 94 L120 128 C120 136 114 142 106 140 L94 136 L94 80 Z" />
+                            <title>Sistema Respiratório — clique para detalhes</title>
+                            <path class="organ-shape"
+                                d="M152,128 Q148,133 147,146 Q146,161 149,172 Q152,181 158,183 Q166,185 167,174 L168,138 Q165,125 159,125 Q153,125 152,128 Z" />
+                            <path class="organ-shape"
+                                d="M248,128 Q252,133 253,146 Q254,161 251,172 Q248,181 242,183 Q234,185 233,174 L232,138 Q235,125 241,125 Q247,125 248,128 Z" />
+                            <rect class="organ-shape organ-trachea" x="196" y="114" width="8" height="20" rx="3" />
                         </g>
-
-                        <!-- Coração -->
-                        <g id="organ-cardiovascular" class="organ-shape risk-none" role="button" tabindex="0"
-                            aria-label="Sistema Cardiovascular">
-                            <path
-                                d="M80 128 C80 128 60 112 60 100 C60 92 66 86 74 88 C78 89 80 94 80 94 C80 94 82 89 86 88 C94 86 100 92 100 100 C100 112 80 128 80 128 Z" />
+                        <g data-organ="cardiovascular" class="organ-group" role="button" tabindex="0"
+                            aria-label="Coração">
+                            <title>Sistema Cardiovascular — clique para detalhes</title>
+                            <path class="organ-shape"
+                                d="M200,178 C200,178 177,164 177,151 C177,142 184,137 191,140 C195,142 198,146 200,150 C202,146 205,142 209,140 C216,137 223,142 223,151 C223,164 200,178 200,178 Z" />
                         </g>
-
-                        <!-- Fígado -->
-                        <g id="organ-figado" class="organ-shape risk-none" role="button" tabindex="0"
-                            aria-label="Fígado">
-                            <path
-                                d="M94 140 C116 138 122 152 118 164 C114 172 104 176 90 174 C78 172 70 164 72 156 C74 148 82 142 94 140 Z" />
+                        <g data-organ="figado" class="organ-group" role="button" tabindex="0" aria-label="Fígado">
+                            <title>Fígado — Metabolismo Hepático — clique para detalhes</title>
+                            <ellipse class="organ-shape" cx="228" cy="208" rx="24" ry="15"
+                                transform="rotate(-8 228 208)" />
                         </g>
-
-                        <!-- Estômago / TGI -->
-                        <g id="organ-gastrointestinal" class="organ-shape risk-none" role="button" tabindex="0"
+                        <g data-organ="rins" class="organ-group" role="button" tabindex="0" aria-label="Rins">
+                            <title>Rins — Metabolismo Renal — clique para detalhes</title>
+                            <ellipse class="organ-shape" cx="163" cy="220" rx="10" ry="15" />
+                            <ellipse class="organ-shape" cx="237" cy="222" rx="10" ry="15" />
+                        </g>
+                        <g data-organ="gastrointestinal" class="organ-group" role="button" tabindex="0"
                             aria-label="Trato Gastrointestinal">
-                            <path
-                                d="M68 150 C60 152 56 162 60 172 C64 182 76 186 84 182 C86 190 82 200 78 204 L86 204 C92 196 92 184 88 174 C96 172 100 164 96 156 C92 150 80 148 68 150 Z" />
+                            <title>Trato Gastrointestinal — clique para detalhes</title>
+                            <ellipse class="organ-shape" cx="192" cy="228" rx="18" ry="13" />
                         </g>
-
-                        <!-- Rins -->
-                        <g id="organ-rins" class="organ-shape risk-none" role="button" tabindex="0" aria-label="Rins">
-                            <!-- Rim esquerdo -->
-                            <path
-                                d="M46 164 C40 164 36 170 36 178 C36 186 40 192 46 192 C52 192 56 186 56 178 C56 170 52 164 46 164 Z" />
-                            <!-- Rim direito -->
-                            <path
-                                d="M114 164 C108 164 104 170 104 178 C104 186 108 192 114 192 C120 192 124 186 124 178 C124 170 120 164 114 164 Z" />
-                        </g>
-
-                        <!-- Sistema Hematológico (medula — fêmur) -->
-                        <g id="organ-hematologico" class="organ-shape risk-none" role="button" tabindex="0"
+                        <g data-organ="hematologico" class="organ-group" role="button" tabindex="0"
                             aria-label="Sistema Hematológico">
-                            <!-- Indicador na região do esterno -->
-                            <rect x="73" y="94" width="14" height="44" rx="6" />
+                            <title>Sistema Hematológico — clique para detalhes</title>
+                            <ellipse class="organ-shape" cx="200" cy="284" rx="35" ry="13" />
                         </g>
 
-                        <!-- Labels dos órgãos -->
-                        <text x="80" y="14" text-anchor="middle" font-size="7" fill="#64748B"
-                            font-family="IBM Plex Sans, sans-serif" font-weight="600" pointer-events="none">SNC</text>
-                        <text x="48" y="118" text-anchor="middle" font-size="6.5" fill="#64748B"
-                            font-family="IBM Plex Sans, sans-serif" font-weight="600"
-                            pointer-events="none">Pulmões</text>
-                        <text x="80" y="138" text-anchor="middle" font-size="6.5" fill="#64748B"
-                            font-family="IBM Plex Sans, sans-serif" font-weight="600"
-                            pointer-events="none">Coração</text>
-                        <text x="97" y="158" text-anchor="middle" font-size="6.5" fill="#64748B"
-                            font-family="IBM Plex Sans, sans-serif" font-weight="600"
-                            pointer-events="none">Fígado</text>
-                        <text x="73" y="192" text-anchor="middle" font-size="6.5" fill="#64748B"
-                            font-family="IBM Plex Sans, sans-serif" font-weight="600" pointer-events="none">TGI</text>
-                        <text x="46" y="200" text-anchor="middle" font-size="6" fill="#64748B"
-                            font-family="IBM Plex Sans, sans-serif" font-weight="600" pointer-events="none">Rins</text>
-                        <text x="80" y="145" text-anchor="middle" font-size="5.5" fill="rgba(100,116,139,.7)"
-                            font-family="IBM Plex Sans, sans-serif" pointer-events="none">Hematopoese</text>
-
+                        <!-- LABELS -->
+                        <circle class="sev-dot" id="dot-snc" r="4" cx="70" cy="52" />
+                        <text class="organ-lbl" id="lbl-snc" x="78" y="48" text-anchor="start">SNC</text>
+                        <circle class="sev-dot" id="dot-respiratorio" r="4" cx="70" cy="154" />
+                        <text class="organ-lbl" id="lbl-respiratorio" x="78" y="150" text-anchor="start">Pulmões</text>
+                        <circle class="sev-dot" id="dot-rins" r="4" cx="70" cy="220" />
+                        <text class="organ-lbl" id="lbl-rins" x="78" y="216" text-anchor="start">Rins</text>
+                        <circle class="sev-dot" id="dot-hematologico" r="4" cx="70" cy="285" />
+                        <text class="organ-lbl" id="lbl-hematologico" x="78" y="281" text-anchor="start">Hemato.</text>
+                        <circle class="sev-dot" id="dot-cardiovascular" r="4" cx="330" cy="167" />
+                        <text class="organ-lbl" id="lbl-cardiovascular" x="322" y="163" text-anchor="end">Coração</text>
+                        <circle class="sev-dot" id="dot-figado" r="4" cx="330" cy="210" />
+                        <text class="organ-lbl" id="lbl-figado" x="322" y="206" text-anchor="end">Fígado</text>
+                        <circle class="sev-dot" id="dot-gastrointestinal" r="4" cx="330" cy="229" />
+                        <text class="organ-lbl" id="lbl-gastrointestinal" x="322" y="225" text-anchor="end">TGI</text>
                     </svg>
                 </div>
 
-                <!-- Legenda lateral dos órgãos -->
                 <div class="organ-legend-panel" id="organ-legend-panel" role="list"
-                    aria-label="Lista de sistemas orgânicos">
-                    <!-- preenchido por JS -->
-                </div>
+                    aria-label="Lista de sistemas orgânicos"></div>
             </div>
         </div>
 
     </main>
 
-    <!-- ═══════════════════════════════════
-       OVERLAY + OFF-CANVAS PANEL
-  ═══════════════════════════════════ -->
+    <!-- OVERLAY + PANEL -->
     <div class="panel-overlay" id="panel-overlay" role="presentation"></div>
-
     <aside class="side-panel" id="side-panel" role="complementary" aria-label="Detalhes da interação"
         aria-hidden="true">
         <div class="panel-header">
-            <div class="panel-title-group" id="panel-title-group">
-                <!-- preenchido por JS -->
-            </div>
+            <div class="panel-title-group" id="panel-title-group"></div>
             <button class="close-btn" id="close-panel-btn" aria-label="Fechar painel">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2"
                     stroke-linecap="round">
@@ -1488,66 +1531,57 @@
                 </svg>
             </button>
         </div>
-
-        <div class="panel-body" id="panel-body">
-            <!-- preenchido por JS -->
-        </div>
+        <div class="panel-body" id="panel-body"></div>
     </aside>
 
-    <!-- Tooltip customizado para Cytoscape -->
+    <!-- Tooltip -->
     <div class="cy-tooltip" id="cy-tooltip" role="tooltip" aria-hidden="true"></div>
 
     <!-- ═══════════════════════════════════
-       JAVASCRIPT
-  ═══════════════════════════════════ -->
+     JAVASCRIPT
+═══════════════════════════════════ -->
     <script>
         // ════════════════════════════════════════════════
-        //  DATASET DE INTERAÇÕES MOCK
+        //  DATASET
         // ════════════════════════════════════════════════
         const INTERACTIONS_DB = [
             {
-                drug_a: "Varfarina", drug_b: "AAS",
-                severity: "major",
-                mechanism: "Ambos inibem a agregação plaquetária por mecanismos diferentes: a Varfarina bloqueia fatores vitamina K-dependentes; o AAS inibe irreversivelmente a COX-1. O uso conjunto aumenta drasticamente o risco de sangramento gastrointestinal e intracraniano (Rang & Dale, Farmacologia, 8ª ed.).",
+                drug_a: "Varfarina", drug_b: "AAS", severity: "major",
+                mechanism: "Ambos inibem a agregação plaquetária por mecanismos diferentes: a Varfarina bloqueia fatores vitamina K-dependentes; o AAS inibe irreversivelmente a COX-1. O uso conjunto aumenta drasticamente o risco de sangramento gastrointestinal e intracraniano.",
                 effects: ["Sangramento GI", "Hemorragia intracraniana"],
                 recommendation: "Evitar combinação. Se necessário, monitorar INR rigorosamente e considerar IBP profilático.",
                 systems_affected: ["cardiovascular", "hematologico"]
             },
             {
-                drug_a: "Metformina", drug_b: "Álcool",
-                severity: "moderate",
+                drug_a: "Metformina", drug_b: "Álcool", severity: "moderate",
                 mechanism: "O álcool potencializa o efeito da metformina na inibição da gliconeogênese hepática e compromete a eliminação de lactato, aumentando o risco de acidose lática — condição rara, porém potencialmente fatal.",
                 effects: ["Hipoglicemia", "Acidose lática"],
                 recommendation: "Orientar o paciente a evitar consumo de álcool durante o tratamento.",
                 systems_affected: ["figado", "snc"]
             },
             {
-                drug_a: "Sinvastatina", drug_b: "Eritromicina",
-                severity: "contraindicated",
-                mechanism: "A eritromicina é potente inibidor da CYP3A4, enzima responsável pelo metabolismo de ~80% da sinvastatina. A co-administração eleva os níveis plasmáticos da sinvastatina em até 10×, criando risco grave de miopatia e rabdomiólise (Goodman & Gilman, 13ª ed.).",
+                drug_a: "Sinvastatina", drug_b: "Eritromicina", severity: "contraindicated",
+                mechanism: "A eritromicina é potente inibidor da CYP3A4, enzima responsável pelo metabolismo de ~80% da sinvastatina. A co-administração eleva os níveis plasmáticos da sinvastatina em até 10×, criando risco grave de miopatia e rabdomiólise.",
                 effects: ["Miopatia", "Rabdomiólise", "Insuficiência renal aguda"],
                 recommendation: "Contraindicado. Suspender a sinvastatina durante o uso de eritromicina ou substituir pelo macrolídeo.",
                 systems_affected: ["figado", "rins", "cardiovascular"]
             },
             {
-                drug_a: "Amiodarona", drug_b: "Digoxina",
-                severity: "major",
+                drug_a: "Amiodarona", drug_b: "Digoxina", severity: "major",
                 mechanism: "A amiodarona inibe a glicoproteína-P e a CYP3A4, reduzindo significativamente a eliminação renal e hepática da digoxina. Pode elevar os níveis plasmáticos de digoxina em 70–100%, precipitando toxicidade digitálica.",
                 effects: ["Bradicardia", "Bloqueio AV", "Toxicidade digitálica"],
                 recommendation: "Reduzir dose de digoxina em 50% ao iniciar amiodarona. Monitorar níveis séricos e ECG.",
                 systems_affected: ["cardiovascular"]
             },
             {
-                drug_a: "Fluoxetina", drug_b: "Tramadol",
-                severity: "major",
-                mechanism: "Ambos aumentam a transmissão serotoninérgica. A fluoxetina ainda inibe fortemente a CYP2D6, impedindo a biotransformação do tramadol para seu metabólito ativo O-desmetiltramadol. Risco real de síndrome serotoninérgica.",
+                drug_a: "Fluoxetina", drug_b: "Tramadol", severity: "major",
+                mechanism: "Ambos aumentam a transmissão serotoninérgica. A fluoxetina ainda inibe fortemente a CYP2D6, impedindo a biotransformação do tramadol para seu metabólito ativo. Risco real de síndrome serotoninérgica.",
                 effects: ["Síndrome serotoninérgica", "Convulsões", "Hipertermia"],
                 recommendation: "Evitar combinação. Preferir analgésico alternativo (ex: dipirona, paracetamol) ou ISRS diferente.",
                 systems_affected: ["snc"]
             },
             {
-                drug_a: "Methotrexato", drug_b: "AAS",
-                severity: "major",
+                drug_a: "Methotrexato", drug_b: "AAS", severity: "major",
                 mechanism: "O AAS compete com o metotrexato pela secreção tubular renal (transportador OAT), reduzindo sua excreção e elevando seus níveis plasmáticos a concentrações potencialmente tóxicas para medula óssea e mucosas.",
                 effects: ["Mielossupressão", "Mucosite", "Hepatotoxicidade"],
                 recommendation: "Monitorar hemograma e função hepática. Considerar paracetamol como alternativa ao AAS.",
@@ -1555,7 +1589,6 @@
             }
         ];
 
-        // Lista completa de medicamentos para autocomplete
         const DRUG_CATALOG = [
             { name: "Varfarina", class: "Anticoagulante" },
             { name: "AAS", class: "Antiagregante / AINE" },
@@ -1579,7 +1612,6 @@
             { name: "Prednisona", class: "Corticosteroide" },
         ];
 
-        // Mapa de órgãos
         const ORGANS = [
             { key: "cardiovascular", label: "Cardiovascular", emoji: "🫀" },
             { key: "snc", label: "Sistema Nervoso", emoji: "🧠" },
@@ -1590,65 +1622,81 @@
             { key: "respiratorio", label: "Respiratório", emoji: "🫁" },
         ];
 
-        // Mapa de labels de gravidade
         const SEVERITY_LABELS = {
-            contraindicated: "Contraindicado",
-            major: "Maior",
-            moderate: "Moderado",
-            minor: "Menor"
+            contraindicated: "Contraindicado", major: "Maior", moderate: "Moderado", minor: "Menor"
         };
 
         // ════════════════════════════════════════════════
-        //  ESTADO DA APLICAÇÃO
+        //  ESTADO
         // ════════════════════════════════════════════════
         const state = {
-            drugs: [],         // lista de nomes de medicamentos adicionados
-            interactions: [],  // interações calculadas entre os medicamentos ativos
-            cy: null,          // instância Cytoscape
-            currentLayout: "cose"
+            drugs: [],
+            interactions: [],
+            currentLayout: 'force',
         };
+
+        // ════════════════════════════════════════════════
+        //  D3 GRAPH STATE
+        // ════════════════════════════════════════════════
+        const G = {
+            simulation: null,
+            nodes: [],
+            links: [],
+            safeLinks: [],
+        };
+
+        const SEV = {
+            contraindicated: {
+                nodeColor: '#2A0808', stroke: '#FF4444', filter: 'url(#gf-contra)',
+                textColor: '#FF9999', edgeColor: '#FF3333', edgeWidth: 2.8, edgeDash: null, edgeOpacity: .92,
+            },
+            major: {
+                nodeColor: '#241000', stroke: '#FF8844', filter: 'url(#gf-major)',
+                textColor: '#FFCC99', edgeColor: '#FF7733', edgeWidth: 2.0, edgeDash: null, edgeOpacity: .85,
+            },
+            moderate: {
+                nodeColor: '#211A00', stroke: '#FFDD55', filter: 'url(#gf-moderate)',
+                textColor: '#FFE899', edgeColor: '#FFCC44', edgeWidth: 1.5, edgeDash: '7,4', edgeOpacity: .78,
+            },
+            minor: {
+                nodeColor: '#101A08', stroke: '#66DD55', filter: 'url(#gf-minor)',
+                textColor: '#BBEEAA', edgeColor: '#55CC44', edgeWidth: 1.2, edgeDash: '2,5', edgeOpacity: .68,
+            },
+            safe: {
+                nodeColor: '#0F1825', stroke: '#2A4A7F', filter: null,
+                textColor: '#5A7899', edgeColor: '#1E3A6E', edgeWidth: 0.7, edgeDash: null, edgeOpacity: .2,
+            },
+        };
+
+        const SEV_ORDER = ['safe', 'minor', 'moderate', 'major', 'contraindicated'];
 
         // ════════════════════════════════════════════════
         //  UTILITÁRIOS
         // ════════════════════════════════════════════════
-
-        /** Encontra todas as interações entre os medicamentos no state.drugs */
         function computeInteractions() {
             const found = [];
             const drugs = state.drugs;
             for (let i = 0; i < drugs.length; i++) {
                 for (let j = i + 1; j < drugs.length; j++) {
-                    const a = drugs[i].toLowerCase();
-                    const b = drugs[j].toLowerCase();
-                    const match = INTERACTIONS_DB.find(inter =>
-                        (inter.drug_a.toLowerCase() === a && inter.drug_b.toLowerCase() === b) ||
-                        (inter.drug_a.toLowerCase() === b && inter.drug_b.toLowerCase() === a)
+                    const a = drugs[i].toLowerCase(), b = drugs[j].toLowerCase();
+                    const match = INTERACTIONS_DB.find(x =>
+                        (x.drug_a.toLowerCase() === a && x.drug_b.toLowerCase() === b) ||
+                        (x.drug_a.toLowerCase() === b && x.drug_b.toLowerCase() === a)
                     );
-                    if (match) {
-                        found.push({
-                            ...match,
-                            drug_a: drugs[i],
-                            drug_b: drugs[j]
-                        });
-                    }
+                    if (match) found.push({ ...match, drug_a: drugs[i], drug_b: drugs[j] });
                 }
             }
             return found;
         }
 
-        function severityColor(severity) {
-            const map = {
-                contraindicated: "#DC2626",
-                major: "#EA580C",
-                moderate: "#D97706",
-                minor: "#65A30D"
-            };
-            return map[severity] || "#94A3B8";
-        }
-
-        function severityWidth(severity) {
-            const map = { contraindicated: 5, major: 3.5, moderate: 2.5, minor: 1.5 };
-            return map[severity] || 2;
+        function worstSevForDrug(name) {
+            let worst = 'safe';
+            state.interactions.forEach(i => {
+                if (i.drug_a === name || i.drug_b === name) {
+                    if (SEV_ORDER.indexOf(i.severity) > SEV_ORDER.indexOf(worst)) worst = i.severity;
+                }
+            });
+            return worst;
         }
 
         function announceSR(text) {
@@ -1657,8 +1705,13 @@
             requestAnimationFrame(() => { el.textContent = text; });
         }
 
+        function getContainerSize() {
+            const el = document.getElementById('cy-container');
+            return { w: el.clientWidth || 800, h: el.clientHeight || 500 };
+        }
+
         // ════════════════════════════════════════════════
-        //  RENDERING: TAGS
+        //  RENDER: TAGS
         // ════════════════════════════════════════════════
         function renderTags() {
             const row = document.getElementById('tags-row');
@@ -1668,477 +1721,468 @@
                 li.className = 'drug-tag';
                 li.setAttribute('role', 'listitem');
                 li.setAttribute('tabindex', '0');
-                li.innerHTML = `
-        ${drug}
-        <button
-          aria-label="Remover ${drug}"
-          data-index="${i}"
-          tabindex="0"
-        >
-          <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-            <line x1="1" y1="1" x2="7" y2="7"/><line x1="7" y1="1" x2="1" y2="7"/>
-          </svg>
-        </button>
-      `;
+                li.innerHTML = `${drug}
+      <button aria-label="Remover ${drug}" data-index="${i}" tabindex="0">
+        <svg width="8" height="8" viewBox="0 0 8 8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <line x1="1" y1="1" x2="7" y2="7"/><line x1="7" y1="1" x2="1" y2="7"/>
+        </svg>
+      </button>`;
                 li.querySelector('button').addEventListener('click', () => removeDrug(i));
                 row.appendChild(li);
             });
         }
 
         // ════════════════════════════════════════════════
-        //  RENDERING: COUNTER
+        //  RENDER: COUNTER
         // ════════════════════════════════════════════════
         function renderCounter() {
             const count = state.drugs.length;
             const iCount = state.interactions.length;
-
             document.getElementById('drug-count').textContent = count;
-            document.getElementById('drug-count-label').textContent =
-                count === 1 ? 'medicamento' : 'medicamentos';
+            document.getElementById('drug-count-label').textContent = count === 1 ? 'medicamento' : 'medicamentos';
 
             const interSection = document.getElementById('interaction-count-section');
             const interBadge = document.getElementById('interaction-badge');
-
             if (count >= 2) {
                 interSection.style.display = '';
-                const badgeEl = interBadge;
                 const color = iCount > 0
-                    ? (state.interactions.some(i => i.severity === 'contraindicated')
-                        ? '#DC2626'
-                        : state.interactions.some(i => i.severity === 'major')
-                            ? '#EA580C'
-                            : '#D97706')
+                    ? (state.interactions.some(i => i.severity === 'contraindicated') ? '#DC2626'
+                        : state.interactions.some(i => i.severity === 'major') ? '#EA580C' : '#D97706')
                     : '#65A30D';
-                badgeEl.style.background = color + '18';
-                badgeEl.style.color = color;
-                badgeEl.style.border = `1px solid ${color}40`;
-                badgeEl.textContent = `${iCount} ${iCount === 1 ? 'interação' : 'interações'}`;
+                interBadge.style.background = color + '18';
+                interBadge.style.color = color;
+                interBadge.style.border = `1px solid ${color}40`;
+                interBadge.textContent = `${iCount} ${iCount === 1 ? 'interação' : 'interações'}`;
             } else {
                 interSection.style.display = 'none';
             }
-
-            const analyzeBtn = document.getElementById('analyze-btn');
-            analyzeBtn.disabled = count < 2;
+            document.getElementById('analyze-btn').disabled = count < 2;
         }
 
         // ════════════════════════════════════════════════
-        //  RENDERING: GRAFO
+        //  RENDER: GRAFO D3
         // ════════════════════════════════════════════════
         function renderGraph() {
             const empty = document.getElementById('graph-empty');
-            const hasDrugs = state.drugs.length >= 1;
 
-            if (!hasDrugs) {
+            if (state.drugs.length < 1) {
                 empty.style.display = '';
-                if (state.cy) { state.cy.elements().remove(); }
+                clearGraph();
                 return;
             }
-
             empty.style.display = 'none';
+            buildAndDraw();
+        }
 
-            // Pior severidade por nó
-            const sevOrder = ['safe', 'minor', 'moderate', 'major', 'contraindicated'];
-            const nodeSeverity = {};
-            state.interactions.forEach(inter => {
-                [inter.drug_a, inter.drug_b].forEach(drug => {
-                    const prev = nodeSeverity[drug];
-                    if (!prev || sevOrder.indexOf(inter.severity) > sevOrder.indexOf(prev)) {
-                        nodeSeverity[drug] = inter.severity;
-                    }
-                });
+        function clearGraph() {
+            if (G.simulation) { G.simulation.stop(); G.simulation = null; }
+            ['g-safe-links', 'g-links', 'g-halos', 'g-nodes', 'g-labels'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = '';
+            });
+        }
+
+        function buildAndDraw() {
+            // Preserve existing positions
+            const prevPos = {};
+            G.nodes.forEach(n => { prevPos[n.id] = { x: n.x, y: n.y, vx: n.vx || 0, vy: n.vy || 0 }; });
+
+            const { w, h } = getContainerSize();
+
+            G.nodes = state.drugs.map(name => {
+                const p = prevPos[name];
+                return {
+                    id: name,
+                    severity: worstSevForDrug(name),
+                    x: p ? p.x : w / 2 + (Math.random() - .5) * 120,
+                    y: p ? p.y : h / 2 + (Math.random() - .5) * 120,
+                    vx: p ? p.vx : 0,
+                    vy: p ? p.vy : 0,
+                };
             });
 
-            const nodes = state.drugs.map(drug => ({
-                data: {
-                    id: drug,
-                    label: drug,
-                    fullName: drug,
-                    maxSeverity: nodeSeverity[drug] || 'safe',
-                    hasInteraction: !!nodeSeverity[drug]
-                }
-            }));
+            const activePairs = new Set();
+            G.links = state.interactions.map(i => {
+                activePairs.add(`${i.drug_a}||${i.drug_b}`);
+                activePairs.add(`${i.drug_b}||${i.drug_a}`);
+                return { source: i.drug_a, target: i.drug_b, severity: i.severity, interaction: i };
+            });
 
-            // Arestas com interação conhecida
-            const knownEdges = state.interactions.map(inter => ({
-                data: {
-                    id: `${inter.drug_a}--${inter.drug_b}`,
-                    source: inter.drug_a,
-                    target: inter.drug_b,
-                    severity: inter.severity,
-                    interaction: inter,
-                    isSafe: false
-                }
-            }));
-
-            // Arestas "safe" — pares sem interação conhecida
-            const safeEdges = [];
+            G.safeLinks = [];
             for (let i = 0; i < state.drugs.length; i++) {
                 for (let j = i + 1; j < state.drugs.length; j++) {
                     const a = state.drugs[i], b = state.drugs[j];
-                    const alreadyHas = knownEdges.some(e =>
-                        (e.data.source === a && e.data.target === b) ||
-                        (e.data.source === b && e.data.target === a)
-                    );
-                    if (!alreadyHas) {
-                        safeEdges.push({
-                            data: {
-                                id: `${a}--${b}`,
-                                source: a, target: b,
-                                severity: 'safe',
-                                isSafe: true,
-                                interaction: null
-                            }
-                        });
-                    }
+                    if (!activePairs.has(`${a}||${b}`))
+                        G.safeLinks.push({ source: a, target: b });
                 }
             }
 
-            const allEdges = [...knownEdges, ...safeEdges];
-
-            if (!state.cy) {
-                state.cy = cytoscape({
-                    container: document.getElementById('cy-container'),
-                    elements: [...nodes, ...allEdges],
-                    style: buildCyStyle(),
-                    layout: buildLayoutConfig('cose')
-                });
-                bindCyEvents();
-            } else {
-                state.cy.elements().remove();
-                state.cy.add([...nodes, ...allEdges]);
-                runLayout(state.currentLayout);
-            }
+            drawGraph();
+            startSimulation();
         }
 
-        // ── Paletas Obsidian ───────────────────────────
-        const NODE_GLOW = {
-            contraindicated: { fill: '#3D0A0A', stroke: '#FF3333', glow: 'rgba(255,51,51,.7)', label: '#FFB3B3' },
-            major: { fill: '#2D1200', stroke: '#FF7733', glow: 'rgba(255,119,51,.6)', label: '#FFCCA3' },
-            moderate: { fill: '#2A1D00', stroke: '#FFBB33', glow: 'rgba(255,187,51,.5)', label: '#FFE5A0' },
-            minor: { fill: '#0A1F07', stroke: '#77CC33', glow: 'rgba(119,204,51,.45)', label: '#C8F0A0' },
-            safe: { fill: '#111827', stroke: '#2E4566', glow: 'rgba(30,58,100,.0)', label: '#6B8EAD' },
-        };
+        function startSimulation() {
+            if (G.simulation) G.simulation.stop();
+            const { w, h } = getContainerSize();
 
-        const EDGE_STYLE = {
-            contraindicated: { color: '#FF3333', width: 3, opacity: 0.95, style: 'solid' },
-            major: { color: '#FF7733', width: 2.2, opacity: 0.88, style: 'solid' },
-            moderate: { color: '#FFBB33', width: 1.8, opacity: 0.80, style: 'dashed' },
-            minor: { color: '#77CC33', width: 1.4, opacity: 0.70, style: 'dotted' },
-            safe: { color: '#1E3A5F', width: 1, opacity: 0.35, style: 'solid' },
-        };
-
-        function buildCyStyle() {
-            const nodeStyles = Object.entries(NODE_GLOW).map(([sev, c]) => ({
-                selector: `node[maxSeverity="${sev}"]`,
-                style: {
-                    'background-color': c.fill,
-                    'border-color': c.stroke,
-                    'border-width': sev === 'safe' ? 1 : 2.5,
-                    'color': c.label,
-                    'shadow-color': c.glow,
-                    'shadow-blur': sev === 'safe' ? 0 : 10,
-                    'shadow-offset-x': 0,
-                    'shadow-offset-y': 0,
-                }
-            }));
-
-            const edgeStyles = Object.entries(EDGE_STYLE).map(([sev, s]) => ({
-                selector: `edge[severity="${sev}"]`,
-                style: {
-                    'line-color': s.color,
-                    'width': s.width,
-                    'opacity': s.opacity,
-                    'line-style': s.style,
-                    ...(s.style === 'dashed' ? { 'line-dash-pattern': [8, 5] } : {}),
-                    ...(s.style === 'dotted' ? { 'line-dash-pattern': [2, 5] } : {}),
-                }
-            }));
-
-            return [
-                // ── NÓS ──────────────────────────────────
-                {
-                    selector: 'node',
-                    style: {
-                        'label': 'data(label)',
-                        'width': 30, 'height': 30,
-                        'font-family': 'IBM Plex Sans, sans-serif',
-                        'font-size': 10,
-                        'font-weight': 600,
-                        'text-valign': 'bottom',
-                        'text-halign': 'center',
-                        'text-margin-y': 6,
-                        'text-wrap': 'none',
-                        'cursor': 'pointer',
-                        'transition-property': 'border-width, opacity, width, height',
-                        'transition-duration': '0.18s',
-                    }
-                },
-                ...nodeStyles,
-                {
-                    selector: 'node:hover',
-                    style: {
-                        'border-width': 3,
-                        'width': 38, 'height': 38,
-                        'shadow-blur': 28,
-                    }
-                },
-                {
-                    selector: 'node.highlighted',
-                    style: {
-                        'border-width': 3.5,
-                        'width': 38, 'height': 38,
-                        'shadow-blur': 32,
-                        'opacity': 1,
-                    }
-                },
-                {
-                    selector: 'node.dimmed',
-                    style: { 'opacity': 0.12 }
-                },
-
-                // ── ARESTAS ───────────────────────────────
-                {
-                    selector: 'edge',
-                    style: {
-                        'curve-style': 'bezier',
-                        'transition-property': 'opacity',
-                        'transition-duration': '0.18s',
-                    }
-                },
-                ...edgeStyles,
-                {
-                    selector: 'edge[isSafe = false]:hover',
-                    style: { 'opacity': 1, 'width': ele => (EDGE_STYLE[ele.data('severity')]?.width || 1) + 1.5, 'cursor': 'pointer' }
-                },
-                {
-                    selector: 'edge.dimmed',
-                    style: { 'opacity': 0.04 }
-                },
-                {
-                    selector: 'edge.highlighted',
-                    style: { 'opacity': 1 }
-                }
+            // Safe links entram na física com força fraca para manter cluster coeso
+            const allLinksForSim = [
+                ...G.links,
+                ...G.safeLinks.map(l => ({ ...l, severity: 'safe', _isSafe: true }))
             ];
+
+            G.simulation = d3.forceSimulation(G.nodes)
+                .force('link',
+                    d3.forceLink(allLinksForSim)
+                        .id(d => d.id)
+                        .distance(d => d._isSafe ? 70 : ({ contraindicated: 50, major: 65, moderate: 80, minor: 95 }[d.severity] || 75))
+                        .strength(d => d._isSafe ? 0.06 : ({ contraindicated: .9, major: .7, moderate: .5, minor: .3 }[d.severity] || .4))
+                )
+                .force('charge',
+                    d3.forceManyBody()
+                        .strength(d => ({ contraindicated: -200, major: -160, moderate: -130, minor: -110, safe: -100 }[d.severity] || -130))
+                        .distanceMin(12)
+                        .distanceMax(280)
+                )
+                .force('center', d3.forceCenter(w / 2, h / 2).strength(0.08))
+                .force('collide', d3.forceCollide().radius(22).strength(.8))
+                .alphaDecay(0.018)
+                .velocityDecay(0.38)
+                .on('tick', tickGraph);
         }
 
-        function bindCyEvents() {
-            const cy = state.cy;
-            const tooltip = document.getElementById('cy-tooltip');
+        function drawGraph() {
+            const { w, h } = getContainerSize();
+            d3.select('#graph-svg').attr('viewBox', `0 0 ${w} ${h}`);
 
-            // Clique em aresta com interação → abre painel
-            cy.on('tap', 'edge', function (evt) {
-                const data = evt.target.data();
-                if (data.isSafe) {
-                    // Safe: mostra tooltip inline em vez de painel
-                    return;
-                }
-                openInteractionPanel(data.interaction);
-            });
+            const nodeById = new Map(G.nodes.map(n => [n.id, n]));
 
-            // Clique em nó → modo foco
-            cy.on('tap', 'node', function (evt) {
-                if (evt.target.hasClass('highlighted')) {
-                    cy.elements().removeClass('dimmed highlighted');
-                    return;
-                }
-                const connectedEdges = evt.target.connectedEdges();
-                const connectedNodes = evt.target.neighborhood('node');
-                cy.elements().addClass('dimmed');
-                evt.target.removeClass('dimmed').addClass('highlighted');
-                connectedEdges.removeClass('dimmed').addClass('highlighted');
-                connectedNodes.removeClass('dimmed').addClass('highlighted');
-            });
+            // ── Safe links ──────────────────────────────
+            d3.select('#g-safe-links').selectAll('line').remove();
+            d3.select('#g-safe-links').selectAll('line')
+                .data(G.safeLinks)
+                .join('line')
+                .attr('stroke', SEV.safe.edgeColor)
+                .attr('stroke-width', SEV.safe.edgeWidth)
+                .attr('opacity', SEV.safe.edgeOpacity)
+                .style('pointer-events', 'none');
 
-            // Clique no fundo → desfoca
-            cy.on('tap', function (evt) {
-                if (evt.target === cy) {
-                    cy.elements().removeClass('dimmed highlighted');
-                    tooltip.classList.remove('visible');
-                }
-            });
+            // ── Real links ──────────────────────────────
+            d3.select('#g-links').selectAll('line').remove();
+            d3.select('#g-links').selectAll('line')
+                .data(G.links)
+                .join('line')
+                .attr('stroke', d => SEV[d.severity].edgeColor)
+                .attr('stroke-width', d => SEV[d.severity].edgeWidth)
+                .attr('stroke-dasharray', d => SEV[d.severity].edgeDash || null)
+                .attr('stroke-linecap', 'round')
+                .attr('opacity', d => SEV[d.severity].edgeOpacity)
+                .style('cursor', 'pointer')
+                .on('mouseenter', function (event, d) {
+                    d3.select(this)
+                        .attr('stroke-width', SEV[d.severity].edgeWidth + 2)
+                        .attr('opacity', 1);
+                    showEdgeTip(event, d);
+                })
+                .on('mousemove', moveTip)
+                .on('mouseleave', function (event, d) {
+                    d3.select(this)
+                        .attr('stroke-width', SEV[d.severity].edgeWidth)
+                        .attr('opacity', SEV[d.severity].edgeOpacity);
+                    hideTip();
+                })
+                .on('click', (event, d) => openInteractionPanel(d.interaction));
 
-            // Tooltip em nó
-            cy.on('mouseover', 'node', function (evt) {
-                const node = evt.target;
-                const drugName = node.data('fullName');
-                const drugInfo = DRUG_CATALOG.find(d => d.name === drugName) || {};
-                const knownInter = node.connectedEdges('[isSafe = false]').length;
-                const totalConnections = node.connectedEdges().length;
-                const pos = evt.originalEvent;
-                const sev = node.data('maxSeverity');
-                const glow = NODE_GLOW[sev] || NODE_GLOW.safe;
+            // ── Halos (glow rings) ───────────────────────
+            d3.select('#g-halos').selectAll('circle').remove();
+            d3.select('#g-halos').selectAll('circle')
+                .data(G.nodes.filter(n => n.severity !== 'safe'))
+                .join('circle')
+                .attr('r', 18)
+                .attr('fill', d => {
+                    const colors = { contraindicated: '#FF222233', major: '#FF550022', moderate: '#FFAA0018', minor: '#44AA2215' };
+                    return colors[d.severity] || 'transparent';
+                })
+                .attr('filter', d => SEV[d.severity].filter || null)
+                .attr('stroke', d => SEV[d.severity].stroke)
+                .attr('stroke-width', .8)
+                .attr('opacity', .4)
+                .attr('pointer-events', 'none');
 
-                tooltip.innerHTML = `
-        <strong style="color:${glow.label}">${drugName}</strong>
-        <span class="tip-class">${drugInfo.class || 'Medicamento'}</span>
-        <span class="tip-interactions" style="color:${knownInter > 0 ? glow.stroke : '#4A6080'}">
-          ${knownInter > 0 ? `⚠ ${knownInter} interação${knownInter > 1 ? 'ões' : ''} detectada${knownInter > 1 ? 's' : ''}` : '✓ Sem interações conhecidas com os demais'}
-        </span>
-      `;
+            // ── Nodes ────────────────────────────────────
+            d3.select('#g-nodes').selectAll('circle').remove();
+            d3.select('#g-nodes').selectAll('circle')
+                .data(G.nodes)
+                .join('circle')
+                .attr('r', 10)
+                .attr('fill', d => SEV[d.severity].nodeColor)
+                .attr('stroke', d => SEV[d.severity].stroke)
+                .attr('stroke-width', d => d.severity === 'safe' ? 1.5 : 2.2)
+                .attr('filter', d => SEV[d.severity].filter || null)
+                .style('cursor', 'grab')
+                .call(
+                    d3.drag()
+                        .on('start', (event, d) => {
+                            if (!event.active) G.simulation.alphaTarget(.3).restart();
+                            d.fx = d.x; d.fy = d.y;
+                        })
+                        .on('drag', (event, d) => { d.fx = event.x; d.fy = event.y; })
+                        .on('end', (event, d) => {
+                            if (!event.active) G.simulation.alphaTarget(0);
+                            d.fx = null; d.fy = null;
+                        })
+                )
+                .on('mouseenter', function (event, d) {
+                    d3.select(this).attr('r', 14).attr('stroke-width', 3);
+                    // grow halo
+                    d3.select('#g-halos').selectAll('circle')
+                        .filter(h => h.id === d.id)
+                        .attr('r', 24).attr('opacity', .65);
+                    showNodeTip(event, d);
+                    highlightConnected(d.id);
+                })
+                .on('mousemove', moveTip)
+                .on('mouseleave', function (event, d) {
+                    d3.select(this).attr('r', 10).attr('stroke-width', d.severity === 'safe' ? 1.5 : 2.2);
+                    d3.select('#g-halos').selectAll('circle')
+                        .filter(h => h.id === d.id)
+                        .attr('r', 18).attr('opacity', .4);
+                    hideTip();
+                    resetHighlight();
+                });
 
-                tooltip.style.left = (pos.clientX + 16) + 'px';
-                tooltip.style.top = (pos.clientY - 14) + 'px';
-                tooltip.classList.add('visible');
-                tooltip.setAttribute('aria-hidden', 'false');
-            });
-
-            // Tooltip em aresta
-            cy.on('mouseover', 'edge', function (evt) {
-                const data = evt.target.data();
-                if (!data.isSafe) return; // arestas com interação têm painel
-                const pos = evt.originalEvent;
-                tooltip.innerHTML = `
-        <strong style="color:#6B8EAD">${data.source} × ${data.target}</strong>
-        <span class="tip-interactions" style="color:#4A7040">✓ Sem interação conhecida</span>
-      `;
-                tooltip.style.left = (pos.clientX + 16) + 'px';
-                tooltip.style.top = (pos.clientY - 14) + 'px';
-                tooltip.classList.add('visible');
-            });
-
-            cy.on('mouseout', 'node, edge', function () {
-                tooltip.classList.remove('visible');
-                tooltip.setAttribute('aria-hidden', 'true');
-            });
-
-            cy.on('mousemove', 'node, edge', function (evt) {
-                const pos = evt.originalEvent;
-                tooltip.style.left = (pos.clientX + 16) + 'px';
-                tooltip.style.top = (pos.clientY - 14) + 'px';
-            });
+            // ── Labels ───────────────────────────────────
+            d3.select('#g-labels').selectAll('text').remove();
+            d3.select('#g-labels').selectAll('text')
+                .data(G.nodes)
+                .join('text')
+                .attr('text-anchor', 'middle')
+                .attr('dy', '24')
+                .attr('font-family', 'IBM Plex Sans, sans-serif')
+                .attr('font-size', '10')
+                .attr('font-weight', '600')
+                .attr('fill', d => SEV[d.severity].textColor)
+                .attr('filter', 'url(#gf-label)')
+                .attr('pointer-events', 'none')
+                .text(d => d.id);
         }
 
-        function buildLayoutConfig(name) {
-            const configs = {
-                cose: {
-                    name: 'cose',
-                    padding: 60,
-                    animate: true,
-                    animationDuration: 700,
-                    animationEasing: 'ease-out',
-                    nodeRepulsion: () => 24000,
-                    nodeOverlap: 32,
-                    idealEdgeLength: ele => ele.data('isSafe') ? 200 : 140,
-                    edgeElasticity: ele => ele.data('isSafe') ? 10 : 50,
-                    nestingFactor: 5,
-                    gravity: 40,
-                    numIter: 1200,
-                    initialTemp: 180,
-                    coolingFactor: 0.95,
-                    minTemp: 1,
-                    componentSpacing: 80,
-                    fit: true
-                },
-                circle: { name: 'circle', padding: 60, animate: true, animationDuration: 500 },
-                grid: { name: 'grid', padding: 60, animate: true, animationDuration: 500, avoidOverlap: true, spacingFactor: 1.5 }
-            };
-            return configs[name] || configs.cose;
+        function tickGraph() {
+            const nb = new Map(G.nodes.map(n => [n.id, n]));
+
+            // Safe links — manual resolve
+            d3.select('#g-safe-links').selectAll('line')
+                .attr('x1', d => nb.get(typeof d.source === 'string' ? d.source : d.source.id)?.x ?? 0)
+                .attr('y1', d => nb.get(typeof d.source === 'string' ? d.source : d.source.id)?.y ?? 0)
+                .attr('x2', d => nb.get(typeof d.target === 'string' ? d.target : d.target.id)?.x ?? 0)
+                .attr('y2', d => nb.get(typeof d.target === 'string' ? d.target : d.target.id)?.y ?? 0);
+
+            // Real links — D3 resolved
+            d3.select('#g-links').selectAll('line')
+                .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+                .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+
+            // Halos
+            d3.select('#g-halos').selectAll('circle')
+                .attr('cx', d => d.x).attr('cy', d => d.y);
+
+            // Nodes
+            d3.select('#g-nodes').selectAll('circle')
+                .attr('cx', d => d.x).attr('cy', d => d.y);
+
+            // Labels
+            d3.select('#g-labels').selectAll('text')
+                .attr('x', d => d.x).attr('y', d => d.y);
         }
 
+        // ── Highlight ──────────────────────────────────
+        function highlightConnected(nodeId) {
+            const connected = new Set([nodeId]);
+            G.links.forEach(l => {
+                const s = l.source.id || l.source, t = l.target.id || l.target;
+                if (s === nodeId) connected.add(t);
+                if (t === nodeId) connected.add(s);
+            });
+            d3.select('#g-nodes').selectAll('circle').attr('opacity', d => connected.has(d.id) ? 1 : .08);
+            d3.select('#g-halos').selectAll('circle').attr('opacity', d => connected.has(d.id) ? .65 : .03);
+            d3.select('#g-labels').selectAll('text').attr('opacity', d => connected.has(d.id) ? 1 : .05);
+            d3.select('#g-links').selectAll('line').attr('opacity', d => {
+                const s = d.source.id || d.source, t = d.target.id || d.target;
+                return (s === nodeId || t === nodeId) ? 1 : .03;
+            });
+            d3.select('#g-safe-links').selectAll('line').attr('opacity', .03);
+        }
+
+        function resetHighlight() {
+            d3.select('#g-nodes').selectAll('circle').attr('opacity', 1);
+            d3.select('#g-halos').selectAll('circle').attr('opacity', .4);
+            d3.select('#g-labels').selectAll('text').attr('opacity', 1);
+            d3.select('#g-links').selectAll('line').attr('opacity', d => SEV[d.severity].edgeOpacity);
+            d3.select('#g-safe-links').selectAll('line').attr('opacity', SEV.safe.edgeOpacity);
+        }
+
+        // ── Layout alternativo: Radial ─────────────────
+        function applyRadialLayout() {
+            if (G.simulation) G.simulation.stop();
+            const { w, h } = getContainerSize();
+            const cx = w / 2, cy = h / 2;
+            const n = G.nodes.length;
+            G.nodes.forEach((node, i) => {
+                const angle = (2 * Math.PI * i / n) - Math.PI / 2;
+                const r = Math.min(w, h) * 0.35;
+                node.x = cx + Math.cos(angle) * r;
+                node.y = cy + Math.sin(angle) * r;
+                node.fx = node.x; node.fy = node.y;
+            });
+            tickGraph();
+            setTimeout(() => { G.nodes.forEach(n => { n.fx = null; n.fy = null; }); }, 800);
+        }
+
+        // ── Layout alternativo: Grid ────────────────────
+        function applyGridLayout() {
+            if (G.simulation) G.simulation.stop();
+            const { w, h } = getContainerSize();
+            const n = G.nodes.length;
+            const cols = Math.ceil(Math.sqrt(n));
+            const cellW = w / (cols + 1), cellH = h / (Math.ceil(n / cols) + 1);
+            G.nodes.forEach((node, i) => {
+                node.x = cellW * (i % cols + 1);
+                node.y = cellH * (Math.floor(i / cols) + 1);
+                node.fx = node.x; node.fy = node.y;
+            });
+            tickGraph();
+            setTimeout(() => { G.nodes.forEach(n => { n.fx = null; n.fy = null; }); }, 800);
+        }
+
+        // ── runLayout (called by buttons) ───────────────
         function runLayout(name) {
-            if (!state.cy) return;
-            state.cy.stop();
-            state.cy.layout(buildLayoutConfig(name)).run();
             state.currentLayout = name;
+            if (name === 'force') {
+                G.nodes.forEach(n => { n.fx = null; n.fy = null; });
+                if (G.simulation) G.simulation.alpha(0.6).restart();
+                else buildAndDraw();
+            } else if (name === 'radial') {
+                applyRadialLayout();
+            } else if (name === 'grid') {
+                applyGridLayout();
+            }
         }
 
         // ════════════════════════════════════════════════
-        //  RENDERING: BODY MAP SVG
+        //  TOOLTIP
         // ════════════════════════════════════════════════
+        const tipEl = document.getElementById('cy-tooltip');
 
-        // Mapa de organ key → svg element id
-        const ORGAN_SVG_ID = {
-            cardiovascular: 'organ-cardiovascular',
-            snc: 'organ-snc',
-            figado: 'organ-figado',
-            rins: 'organ-rins',
-            hematologico: 'organ-hematologico',
-            gastrointestinal: 'organ-gastrointestinal',
-            respiratorio: 'organ-respiratorio',
-        };
+        function showNodeTip(event, d) {
+            const s = SEV[d.severity];
+            const info = DRUG_CATALOG.find(x => x.name === d.id) || {};
+            const count = G.links.filter(l => (l.source.id || l.source) === d.id || (l.target.id || l.target) === d.id).length;
+            tipEl.innerHTML = `
+    <strong style="color:${s.textColor}">${d.id}</strong>
+    <span class="tip-class">${info.class || 'Medicamento'}</span>
+    <span class="tip-interactions" style="color:${count > 0 ? s.stroke : '#4A6080'}">
+      ${count > 0 ? `⚠ ${count} interação${count > 1 ? 'ões' : ''} detectada${count > 1 ? 's' : ''}` : '✓ Sem interações conhecidas com os demais'}
+    </span>`;
+            positionTip(event);
+            tipEl.classList.add('visible');
+        }
 
-        // Cores para a legenda lateral
-        const ORGAN_RISK_COLORS = {
-            contraindicated: { bg: '#FEF2F2', dot: '#EF4444', text: '#991B1B', tag: 'Contraindicado', tagBg: '#FEF2F2', tagColor: '#991B1B' },
-            major: { bg: '#FFF7ED', dot: '#F97316', text: '#9A3412', tag: 'Maior', tagBg: '#FFF7ED', tagColor: '#9A3412' },
-            moderate: { bg: '#FFFBEB', dot: '#FBBF24', text: '#92400E', tag: 'Moderado', tagBg: '#FFFBEB', tagColor: '#92400E' },
-            minor: { bg: '#F0FDF4', dot: '#4ADE80', text: '#166534', tag: 'Menor', tagBg: '#F0FDF4', tagColor: '#166534' },
-            null: { bg: 'transparent', dot: '#CBD5E1', text: '#64748B', tag: null }
-        };
+        function showEdgeTip(event, d) {
+            const s = SEV[d.severity];
+            tipEl.innerHTML = `
+    <strong style="color:${s.textColor}">${d.source.id || d.source} × ${d.target.id || d.target}</strong>
+    <span class="tip-interactions" style="color:${s.edgeColor}">⚠ ${SEVERITY_LABELS[d.severity]} — clique para detalhes</span>`;
+            positionTip(event);
+            tipEl.classList.add('visible');
+        }
 
+        function positionTip(e) {
+            tipEl.style.left = (e.clientX + 16) + 'px';
+            tipEl.style.top = (e.clientY - 14) + 'px';
+        }
+        function moveTip(e) { positionTip(e); }
+        function hideTip() { tipEl.classList.remove('visible'); }
+
+        // ════════════════════════════════════════════════
+        //  RENDER: ORGANS
+        // ════════════════════════════════════════════════
         function renderOrgans() {
-            const sevOrder = ['minor', 'moderate', 'major', 'contraindicated'];
-
-            // Calcular risco por órgão
+            const SEV_COLORS = {
+                contraindicated: '#DC2626', major: '#EA580C', moderate: '#D97706', minor: '#65A30D',
+            };
+            const SEV_TAGS = {
+                contraindicated: { bg: '#FEF2F2', color: '#991B1B', label: 'Contraindicado' },
+                major: { bg: '#FFF7ED', color: '#9A3412', label: 'Maior' },
+                moderate: { bg: '#FFFBEB', color: '#92400E', label: 'Moderado' },
+                minor: { bg: '#F0FDF4', color: '#166534', label: 'Menor' },
+            };
+            const order = ['minor', 'moderate', 'major', 'contraindicated'];
             const organRisk = {};
             ORGANS.forEach(o => { organRisk[o.key] = null; });
             state.interactions.forEach(inter => {
                 inter.systems_affected.forEach(sys => {
-                    const prev = organRisk[sys];
-                    const sev = inter.severity;
-                    if (!prev || sevOrder.indexOf(sev) > sevOrder.indexOf(prev)) {
-                        organRisk[sys] = sev;
-                    }
+                    const prev = organRisk[sys], sev = inter.severity;
+                    if (!prev || order.indexOf(sev) > order.indexOf(prev)) organRisk[sys] = sev;
                 });
             });
 
-            // Atualiza classes dos órgãos no SVG
             ORGANS.forEach(organ => {
-                const svgId = ORGAN_SVG_ID[organ.key];
-                if (!svgId) return;
-                const el = document.getElementById(svgId);
-                if (!el) return;
-
-                // Remove classes de risco anteriores
-                el.className.baseVal = el.className.baseVal
-                    .replace(/\brisk-\S+/g, '').trim();
-
                 const risk = organRisk[organ.key];
-                const riskClass = risk === 'contraindicated' ? 'risk-contraindicated'
-                    : risk === 'major' ? 'risk-major'
-                        : risk === 'moderate' ? 'risk-moderate'
-                            : risk === 'minor' ? 'risk-minor'
-                                : 'risk-none';
-
-                el.classList.add(riskClass);
-                el.setAttribute('aria-label', `${organ.label}${risk ? ' — risco ' + SEVERITY_LABELS[risk] : ' — sem risco identificado'}`);
+                const group = document.querySelector(`[data-organ="${organ.key}"]`);
+                if (!group) return;
+                group.setAttribute('data-risk', risk || '');
+                group.setAttribute('aria-label', `${organ.label}${risk ? ' — risco ' + SEVERITY_LABELS[risk] : ' — sem risco'}`);
+                const dot = document.getElementById(`dot-${organ.key}`);
+                if (dot) { dot.style.fill = risk ? SEV_COLORS[risk] : '#CBD5E1'; dot.style.opacity = risk ? '1' : '.35'; }
+                const lbl = document.getElementById(`lbl-${organ.key}`);
+                if (lbl) lbl.style.fill = risk ? SEV_COLORS[risk] : '#94A3B8';
+                if (!group.dataset.listenerAdded) {
+                    group.addEventListener('click', () => openOrganPanel(organ));
+                    group.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openOrganPanel(organ); } });
+                    group.dataset.listenerAdded = 'true';
+                }
             });
 
-            // Atualiza legenda lateral
             const panel = document.getElementById('organ-legend-panel');
-            panel.innerHTML = `<div class="organ-legend-title">Sistemas e Status</div>`;
+            const affectedOrgans = ORGANS.filter(o => organRisk[o.key]);
+            affectedOrgans.sort((a, b) => order.indexOf(organRisk[b.key]) - order.indexOf(organRisk[a.key]));
 
-            ORGANS.forEach(organ => {
-                const risk = organRisk[organ.key];
-                const colors = ORGAN_RISK_COLORS[risk] || ORGAN_RISK_COLORS['null'];
+            if (!affectedOrgans.length) {
+                panel.innerHTML = `
+      <div class="organ-legend-title">Sistemas afetados</div>
+      <p style="font-size:.8rem;color:var(--text-muted);line-height:1.6;margin-top:6px;">
+        ${state.drugs.length < 2 ? 'Adicione ao menos 2 medicamentos.' : 'Nenhuma interação detectada nos sistemas orgânicos.'}
+      </p>`;
+                return;
+            }
 
+            panel.innerHTML = `<div class="organ-legend-title">Sistemas afetados</div>`;
+            affectedOrgans.forEach(organ => {
+                const risk = organRisk[organ.key], tag = SEV_TAGS[risk];
                 const item = document.createElement('div');
                 item.className = 'organ-legend-item';
-                item.setAttribute('role', 'listitem');
-                item.style.background = risk ? colors.bg : 'transparent';
-
+                item.setAttribute('role', 'button'); item.setAttribute('tabindex', '0');
                 item.innerHTML = `
-        <div class="organ-dot" style="background:${colors.dot}; ${risk ? `box-shadow:0 0 6px ${colors.dot}88` : ''}"></div>
-        <span class="organ-label" style="color:${risk ? colors.text : 'var(--text-secondary)'}">
-          ${organ.emoji} ${organ.label}
-        </span>
-        ${risk && colors.tag ? `<span class="organ-risk-tag" style="background:${colors.tagBg};color:${colors.tagColor}">${colors.tag}</span>` : ''}
-      `;
-
+      <div class="organ-dot" style="background:${SEV_COLORS[risk]};box-shadow:0 0 5px ${SEV_COLORS[risk]}66;"></div>
+      <span class="organ-label-text">${organ.label}</span>
+      <span class="organ-risk-tag" style="background:${tag.bg};color:${tag.color};">${tag.label}</span>`;
                 item.addEventListener('click', () => openOrganPanel(organ));
                 panel.appendChild(item);
             });
 
-            // Eventos no SVG (bind uma vez ou rebind)
-            ORGANS.forEach(organ => {
-                const svgId = ORGAN_SVG_ID[organ.key];
-                if (!svgId) return;
-                const el = document.getElementById(svgId);
-                if (!el || el._bound) return;
-                el._bound = true;
-                el.addEventListener('click', () => openOrganPanel(organ));
-                el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openOrganPanel(organ); });
-            });
+            const unaffected = ORGANS.filter(o => !organRisk[o.key]);
+            if (unaffected.length) {
+                const div = document.createElement('div');
+                div.style.cssText = 'margin-top:10px;padding-top:10px;border-top:1px solid var(--border);';
+                div.innerHTML = `<div class="organ-legend-title" style="margin-bottom:6px;">Sem interação</div>`;
+                unaffected.forEach(o => {
+                    const row = document.createElement('div');
+                    row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 10px;opacity:.5;';
+                    row.innerHTML = `<div style="width:7px;height:7px;border-radius:50%;background:#CBD5E1;flex-shrink:0;"></div><span style="font-size:.78rem;color:var(--text-secondary);">${o.label}</span>`;
+                    div.appendChild(row);
+                });
+                panel.appendChild(div);
+            }
         }
 
         // ════════════════════════════════════════════════
@@ -2150,7 +2194,6 @@
             document.getElementById('side-panel').setAttribute('aria-hidden', 'false');
             document.getElementById('close-panel-btn').focus();
         }
-
         function closePanel() {
             document.getElementById('side-panel').classList.remove('open');
             document.getElementById('panel-overlay').classList.remove('open');
@@ -2158,121 +2201,68 @@
         }
 
         function openInteractionPanel(inter) {
-            const titleGroup = document.getElementById('panel-title-group');
-            titleGroup.innerHTML = `
-      <div class="panel-drugs">
-        ${inter.drug_a} <span class="vs">×</span> ${inter.drug_b}
-      </div>
-      <span class="severity-badge ${inter.severity}">
-        ${inter.severity === 'contraindicated' ? '⛔' : inter.severity === 'major' ? '🔴' : inter.severity === 'moderate' ? '🟡' : '🟢'}
-        ${SEVERITY_LABELS[inter.severity] || inter.severity}
-      </span>
-    `;
-
-            const systemNames = {
-                cardiovascular: 'Cardiovascular', snc: 'SNC', figado: 'Fígado',
-                rins: 'Rins', hematologico: 'Hematológico', gastrointestinal: 'GI', respiratorio: 'Respiratório'
-            };
-
-            const body = document.getElementById('panel-body');
-            body.innerHTML = `
-      <div class="panel-section">
-        <div class="panel-section-label">Mecanismo Farmacológico</div>
-        <p class="panel-text">${inter.mechanism}</p>
-      </div>
-
-      <div class="panel-section">
-        <div class="panel-section-label">Efeitos Clínicos</div>
-        <div class="effects-list">
-          ${inter.effects.map(e => `<span class="effect-chip">${e}</span>`).join('')}
-        </div>
-      </div>
-
-      <div class="panel-section">
-        <div class="panel-section-label">Recomendação</div>
-        <div class="recommendation-box ${inter.severity}">
-          ${inter.recommendation}
-        </div>
-      </div>
-
-      <div class="panel-section">
-        <div class="panel-section-label">Sistemas Afetados</div>
-        <div class="systems-chips">
-          ${inter.systems_affected.map(s => `<span class="system-chip">${systemNames[s] || s}</span>`).join('')}
-        </div>
-      </div>
-    `;
-
+            document.getElementById('panel-title-group').innerHTML = `
+    <div class="panel-drugs">${inter.drug_a} <span class="vs">×</span> ${inter.drug_b}</div>
+    <span class="severity-badge ${inter.severity}">
+      ${inter.severity === 'contraindicated' ? '⛔' : inter.severity === 'major' ? '🔴' : inter.severity === 'moderate' ? '🟡' : '🟢'}
+      ${SEVERITY_LABELS[inter.severity] || inter.severity}
+    </span>`;
+            const systemNames = { cardiovascular: 'Cardiovascular', snc: 'SNC', figado: 'Fígado', rins: 'Rins', hematologico: 'Hematológico', gastrointestinal: 'GI', respiratorio: 'Respiratório' };
+            document.getElementById('panel-body').innerHTML = `
+    <div class="panel-section">
+      <div class="panel-section-label">Mecanismo Farmacológico</div>
+      <p class="panel-text">${inter.mechanism}</p>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-label">Efeitos Clínicos</div>
+      <div class="effects-list">${inter.effects.map(e => `<span class="effect-chip">${e}</span>`).join('')}</div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-label">Recomendação</div>
+      <div class="recommendation-box ${inter.severity}">${inter.recommendation}</div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-label">Sistemas Afetados</div>
+      <div class="systems-chips">${inter.systems_affected.map(s => `<span class="system-chip">${systemNames[s] || s}</span>`).join('')}</div>
+    </div>`;
             openPanel();
         }
 
         function openOrganPanel(organ) {
-            const affectedInteractions = state.interactions.filter(inter =>
-                inter.systems_affected.includes(organ.key)
-            );
-
-            const titleGroup = document.getElementById('panel-title-group');
-            titleGroup.innerHTML = `
-      <div class="panel-drugs">${organ.emoji} ${organ.label}</div>
-      <span style="font-size:.82rem;color:var(--text-muted);">
-        ${affectedInteractions.length === 0
-                    ? 'Sem interações identificadas'
-                    : `${affectedInteractions.length} interação${affectedInteractions.length > 1 ? 'ões' : ''} afetando este sistema`}
-      </span>
-    `;
-
-            const body = document.getElementById('panel-body');
-
-            if (affectedInteractions.length === 0) {
-                body.innerHTML = `
-        <div style="text-align:center;padding:40px 0;color:var(--text-muted);">
-          <div style="font-size:2rem;margin-bottom:12px;">✅</div>
-          <p>Nenhuma interação identificada nos medicamentos atuais impacta este sistema.</p>
-        </div>
-      `;
-            } else {
-                body.innerHTML = `
-        <div class="panel-section">
-          <div class="panel-section-label">Interações Ativas</div>
-          <div class="organ-panel-list">
-            ${affectedInteractions.map(inter => `
-              <div class="organ-interaction-item">
-                <div class="organ-interaction-drugs" style="display:flex;align-items:center;gap:8px;justify-content:space-between;">
-                  <span>${inter.drug_a} × ${inter.drug_b}</span>
-                  <span class="severity-badge ${inter.severity}" style="font-size:.68rem;padding:2px 8px;">
-                    ${SEVERITY_LABELS[inter.severity]}
-                  </span>
-                </div>
-                <div class="organ-interaction-desc">${inter.mechanism.substring(0, 160)}${inter.mechanism.length > 160 ? '...' : ''}</div>
+            const affected = state.interactions.filter(i => i.systems_affected.includes(organ.key));
+            document.getElementById('panel-title-group').innerHTML = `
+    <div class="panel-drugs">${organ.emoji} ${organ.label}</div>
+    <span style="font-size:.82rem;color:var(--text-muted);">
+      ${affected.length === 0 ? 'Sem interações identificadas' : `${affected.length} interação${affected.length > 1 ? 'ões' : ''} afetando este sistema`}
+    </span>`;
+            document.getElementById('panel-body').innerHTML = affected.length === 0
+                ? `<div style="text-align:center;padding:40px 0;color:var(--text-muted);"><div style="font-size:2rem;margin-bottom:12px;">✅</div><p>Nenhuma interação identificada nos medicamentos atuais impacta este sistema.</p></div>`
+                : `<div class="panel-section">
+        <div class="panel-section-label">Interações Ativas</div>
+        <div class="organ-panel-list">
+          ${affected.map(inter => `
+            <div class="organ-interaction-item">
+              <div class="organ-interaction-drugs" style="display:flex;align-items:center;gap:8px;justify-content:space-between;">
+                <span>${inter.drug_a} × ${inter.drug_b}</span>
+                <span class="severity-badge ${inter.severity}" style="font-size:.68rem;padding:2px 8px;">${SEVERITY_LABELS[inter.severity]}</span>
               </div>
-            `).join('')}
-          </div>
+              <div class="organ-interaction-desc">${inter.mechanism.substring(0, 160)}${inter.mechanism.length > 160 ? '...' : ''}</div>
+            </div>`).join('')}
         </div>
-      `;
-            }
-
+      </div>`;
             openPanel();
         }
 
         // ════════════════════════════════════════════════
-        //  ADICIONAR / REMOVER MEDICAMENTOS
+        //  ADD / REMOVE DRUGS
         // ════════════════════════════════════════════════
         function addDrug(name) {
             const trimmed = name.trim();
             if (!trimmed) return;
-            if (state.drugs.includes(trimmed)) {
-                announceSR(`${trimmed} já foi adicionado.`);
-                return;
-            }
-
+            if (state.drugs.includes(trimmed)) { announceSR(`${trimmed} já foi adicionado.`); return; }
             state.drugs.push(trimmed);
             state.interactions = computeInteractions();
-
-            renderTags();
-            renderCounter();
-            renderGraph();
-            renderOrgans();
-
+            renderTags(); renderCounter(); renderGraph(); renderOrgans();
             announceSR(`${trimmed} adicionado. ${state.drugs.length} medicamentos. ${state.interactions.length} interações.`);
         }
 
@@ -2280,12 +2270,7 @@
             const removed = state.drugs[index];
             state.drugs.splice(index, 1);
             state.interactions = computeInteractions();
-
-            renderTags();
-            renderCounter();
-            renderGraph();
-            renderOrgans();
-
+            renderTags(); renderCounter(); renderGraph(); renderOrgans();
             announceSR(`${removed} removido.`);
             document.getElementById('drug-input').focus();
         }
@@ -2300,141 +2285,76 @@
 
         function showAutocomplete(query) {
             const q = query.toLowerCase();
-            acItems = q.length < 1
-                ? []
-                : DRUG_CATALOG.filter(d =>
-                    d.name.toLowerCase().includes(q) &&
-                    !state.drugs.includes(d.name)
-                ).slice(0, 8);
-
-            listbox.innerHTML = '';
-            acActiveIndex = -1;
-
-            if (acItems.length === 0) {
-                listbox.classList.remove('open');
-                input.setAttribute('aria-activedescendant', '');
-                return;
-            }
-
+            acItems = q.length < 1 ? [] :
+                DRUG_CATALOG.filter(d => d.name.toLowerCase().includes(q) && !state.drugs.includes(d.name)).slice(0, 8);
+            listbox.innerHTML = ''; acActiveIndex = -1;
+            if (!acItems.length) { listbox.classList.remove('open'); input.setAttribute('aria-activedescendant', ''); return; }
             acItems.forEach((drug, i) => {
                 const item = document.createElement('div');
                 item.className = 'autocomplete-item';
                 item.id = `ac-item-${i}`;
                 item.setAttribute('role', 'option');
                 item.setAttribute('aria-selected', 'false');
-                item.innerHTML = `
-        <div class="drug-dot"></div>
-        <span>${drug.name}</span>
-        <span class="drug-class">${drug.class}</span>
-      `;
-                item.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    confirmDrug(drug.name);
-                });
+                item.innerHTML = `<div class="drug-dot"></div><span>${drug.name}</span><span class="drug-class">${drug.class}</span>`;
+                item.addEventListener('mousedown', e => { e.preventDefault(); confirmDrug(drug.name); });
                 listbox.appendChild(item);
             });
-
             listbox.classList.add('open');
         }
 
         function hideAutocomplete() {
-            listbox.classList.remove('open');
-            acActiveIndex = -1;
-            acItems = [];
+            listbox.classList.remove('open'); acActiveIndex = -1; acItems = [];
             input.setAttribute('aria-activedescendant', '');
         }
 
         function setAcActive(index) {
-            const items = listbox.querySelectorAll('.autocomplete-item');
-            items.forEach((el, i) => {
+            listbox.querySelectorAll('.autocomplete-item').forEach((el, i) => {
                 el.classList.toggle('active', i === index);
                 el.setAttribute('aria-selected', i === index ? 'true' : 'false');
             });
             acActiveIndex = index;
-            if (index >= 0) {
-                input.setAttribute('aria-activedescendant', `ac-item-${index}`);
-            }
+            if (index >= 0) input.setAttribute('aria-activedescendant', `ac-item-${index}`);
         }
 
         function confirmDrug(name) {
             if (!name) {
-                // Tenta usar o valor do input
                 const val = input.value.trim();
-                // Se há item ativo no autocomplete, usa esse
-                if (acActiveIndex >= 0 && acItems[acActiveIndex]) {
-                    addDrug(acItems[acActiveIndex].name);
-                } else if (val) {
-                    // Tenta achar match exato ou parcial no catálogo
+                if (acActiveIndex >= 0 && acItems[acActiveIndex]) { addDrug(acItems[acActiveIndex].name); }
+                else if (val) {
                     const match = DRUG_CATALOG.find(d => d.name.toLowerCase() === val.toLowerCase());
-                    if (match) {
-                        addDrug(match.name);
-                    } else {
-                        // Adiciona como digitado (livre)
-                        addDrug(val);
-                    }
+                    addDrug(match ? match.name : val);
                 }
-            } else {
-                addDrug(name);
-            }
-
-            input.value = '';
-            hideAutocomplete();
-            // ← foco automático de volta ao input
-            input.focus();
+            } else { addDrug(name); }
+            input.value = ''; hideAutocomplete(); input.focus();
         }
 
         // ════════════════════════════════════════════════
         //  EVENT LISTENERS
         // ════════════════════════════════════════════════
-
-        // Input: autocomplete dinâmico
         input.addEventListener('input', () => {
             showAutocomplete(input.value);
-            // Atualiza placeholder dinâmico
-            if (state.drugs.length >= 1) {
-                input.placeholder = 'Adicione outro medicamento...';
-            }
+            if (state.drugs.length >= 1) input.placeholder = 'Adicione outro medicamento...';
         });
 
-        // Teclado no input
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                const next = Math.min(acActiveIndex + 1, acItems.length - 1);
-                setAcActive(next);
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                const prev = Math.max(acActiveIndex - 1, 0);
-                setAcActive(prev);
-            } else if (e.key === 'Enter') {
-                e.preventDefault();
-                confirmDrug(acActiveIndex >= 0 ? acItems[acActiveIndex]?.name : '');
-            } else if (e.key === 'Escape') {
-                hideAutocomplete();
-            } else if (e.key === 'Backspace' && input.value === '' && state.drugs.length > 0) {
-                removeDrug(state.drugs.length - 1);
-            }
+        input.addEventListener('keydown', e => {
+            if (e.key === 'ArrowDown') { e.preventDefault(); setAcActive(Math.min(acActiveIndex + 1, acItems.length - 1)); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); setAcActive(Math.max(acActiveIndex - 1, 0)); }
+            else if (e.key === 'Enter') { e.preventDefault(); confirmDrug(acActiveIndex >= 0 ? acItems[acActiveIndex]?.name : ''); }
+            else if (e.key === 'Escape') hideAutocomplete();
+            else if (e.key === 'Backspace' && input.value === '' && state.drugs.length > 0) removeDrug(state.drugs.length - 1);
         });
 
-        // Botão Adicionar
         document.getElementById('add-btn').addEventListener('click', () => {
             confirmDrug(acActiveIndex >= 0 ? acItems[acActiveIndex]?.name : '');
         });
 
-        // Fechar autocomplete ao clicar fora
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.search-wrapper')) hideAutocomplete();
-        });
+        document.addEventListener('click', e => { if (!e.target.closest('.search-wrapper')) hideAutocomplete(); });
 
-        // Fechar painel
         document.getElementById('close-panel-btn').addEventListener('click', closePanel);
         document.getElementById('panel-overlay').addEventListener('click', closePanel);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
 
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closePanel();
-        });
-
-        // Botões de layout do grafo
+        // Layout buttons
         document.querySelectorAll('.ctrl-btn[data-layout]').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.ctrl-btn[data-layout]').forEach(b => b.classList.remove('active'));
@@ -2444,31 +2364,35 @@
         });
 
         document.getElementById('reset-view-btn').addEventListener('click', () => {
-            if (state.cy) {
-                runLayout(state.currentLayout);
-                setTimeout(() => state.cy.fit(undefined, 60), 400);
+            if (G.simulation) {
+                G.nodes.forEach(n => { n.fx = null; n.fy = null; });
+                G.simulation.alpha(.6).restart();
             }
         });
 
-        // Botão Analisar — re-roda layout e dá fit
         document.getElementById('analyze-btn').addEventListener('click', () => {
-            if (state.cy && state.drugs.length >= 2) {
+            if (state.drugs.length >= 2) {
                 runLayout(state.currentLayout);
-                setTimeout(() => state.cy.fit(undefined, 60), 500);
             }
+        });
+
+        window.addEventListener('resize', () => {
+            if (!G.simulation || !state.drugs.length) return;
+            const { w, h } = getContainerSize();
+            d3.select('#graph-svg').attr('viewBox', `0 0 ${w} ${h}`);
+            G.simulation.force('center', d3.forceCenter(w / 2, h / 2).strength(.05));
+            G.simulation.alpha(.2).restart();
         });
 
         // ════════════════════════════════════════════════
-        //  INICIALIZAÇÃO
+        //  INIT
         // ════════════════════════════════════════════════
         (function init() {
             renderOrgans();
             renderCounter();
-            // Foco automático no input ao carregar
             input.focus();
             input.placeholder = 'Ex: Varfarina, AAS, Sinvastatina...';
         })();
-
     </script>
 </body>
 
