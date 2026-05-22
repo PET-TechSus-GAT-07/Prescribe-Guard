@@ -614,11 +614,13 @@
             stroke-width: 1.5;
         }
 
+        /* ── Updated organ-shape rule ── */
         .organ-shape {
-            fill: rgba(203, 213, 225, .5);
+            fill: rgba(203, 213, 225, 0.5);
             stroke: #94A3B8;
             stroke-width: 1;
-            transition: fill .35s ease, stroke .35s ease, filter .35s ease;
+            transition: fill .35s ease, stroke .35s ease, filter .35s ease, transform .25s ease;
+            transform-origin: center;
         }
 
         .organ-trachea {
@@ -635,9 +637,11 @@
             cursor: pointer;
         }
 
+        /* ── Updated hover rule ── */
         .organ-group:hover .organ-shape {
             stroke-width: 2;
-            filter: brightness(1.12) saturate(1.15);
+            filter: brightness(1.18) saturate(1.2);
+            transform: scale(1.06);
         }
 
         .organ-group:focus {
@@ -649,6 +653,21 @@
             stroke: #0EA5E9;
         }
 
+        /* ── Zoom click state ── */
+        .organ-group.zoomed .organ-shape {
+            transform: scale(1.14);
+            filter: brightness(1.22) saturate(1.25) drop-shadow(0 0 8px currentColor);
+            transition: transform .35s cubic-bezier(.22, .68, 0, 1.2), filter .35s ease;
+        }
+
+        /* ── Zoom active state (applied via JS) ── */
+        .organ-group.organ-zoom-active .organ-shape {
+            transform: scale(1.12);
+            filter: brightness(1.2) saturate(1.3);
+            transition: transform .35s cubic-bezier(.22, .68, 0, 1.2), filter .3s ease;
+        }
+
+        /* ── Risk fill rules (override gradients intentionally) ── */
         .organ-group[data-risk="contraindicated"] .organ-shape:not(.organ-trachea) {
             fill: rgba(220, 38, 38, .82);
             stroke: #FF4444;
@@ -1079,8 +1098,8 @@
         .cy-tooltip {
             position: fixed;
             pointer-events: none;
-            background: rgba(10, 14, 20, .94);
-            border: 1px solid rgba(255, 255, 255, .1);
+            background: linear-gradient(135deg, rgba(8, 12, 20, .96) 0%, rgba(14, 22, 38, .96) 100%);
+            border: 1px solid rgba(80, 140, 200, .25);
             color: #E2E8F0;
             border-radius: 9px;
             padding: 9px 13px;
@@ -1088,7 +1107,7 @@
             line-height: 1.55;
             z-index: 600;
             max-width: 230px;
-            box-shadow: 0 8px 28px rgba(0, 0, 0, .55);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, .6), 0 0 0 1px rgba(255, 255, 255, .04) inset;
             opacity: 0;
             transition: opacity .12s;
             backdrop-filter: blur(10px);
@@ -1404,7 +1423,9 @@
                 <div class="body-svg-wrap">
                     <svg id="body-svg" viewBox="0 0 400 440" xmlns="http://www.w3.org/2000/svg"
                         aria-label="Mapa corporal interativo">
+
                         <defs>
+                            <!-- Filtros de glow existentes -->
                             <filter id="glow-contra" x="-50%" y="-50%" width="200%" height="200%">
                                 <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
                                 <feComposite in="SourceGraphic" in2="blur" operator="over" />
@@ -1417,19 +1438,94 @@
                                 <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
                                 <feComposite in="SourceGraphic" in2="blur" operator="over" />
                             </filter>
+                            <!-- Sombra lateral da silhueta -->
+                            <filter id="body-shadow" x="-10%" y="-5%" width="130%" height="115%">
+                                <feDropShadow dx="4" dy="6" stdDeviation="8" flood-color="#8899AA"
+                                    flood-opacity="0.22" />
+                            </filter>
+                            <!-- Gradiente de pele para a silhueta -->
+                            <linearGradient id="skin-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#D4A882" stop-opacity="0.85" />
+                                <stop offset="40%" stop-color="#E8C4A0" stop-opacity="0.95" />
+                                <stop offset="70%" stop-color="#E2BAA0" stop-opacity="0.90" />
+                                <stop offset="100%" stop-color="#C8A080" stop-opacity="0.80" />
+                            </linearGradient>
+                            <!-- Borda da silhueta -->
+                            <linearGradient id="skin-stroke-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#B08060" />
+                                <stop offset="100%" stop-color="#987060" />
+                            </linearGradient>
+                            <!-- Coração -->
+                            <radialGradient id="grad-heart" cx="45%" cy="35%" r="65%">
+                                <stop offset="0%" stop-color="#FF8888" />
+                                <stop offset="55%" stop-color="#CC2222" />
+                                <stop offset="100%" stop-color="#881111" />
+                            </radialGradient>
+                            <!-- Pulmões -->
+                            <radialGradient id="grad-lung-l" cx="55%" cy="30%" r="70%">
+                                <stop offset="0%" stop-color="#FFAAAA" />
+                                <stop offset="50%" stop-color="#EE6677" />
+                                <stop offset="100%" stop-color="#993344" />
+                            </radialGradient>
+                            <radialGradient id="grad-lung-r" cx="45%" cy="30%" r="70%">
+                                <stop offset="0%" stop-color="#FFAAAA" />
+                                <stop offset="50%" stop-color="#EE6677" />
+                                <stop offset="100%" stop-color="#993344" />
+                            </radialGradient>
+                            <!-- Fígado -->
+                            <radialGradient id="grad-liver" cx="40%" cy="30%" r="70%">
+                                <stop offset="0%" stop-color="#CC8844" />
+                                <stop offset="60%" stop-color="#883311" />
+                                <stop offset="100%" stop-color="#5A2008" />
+                            </radialGradient>
+                            <!-- Rins -->
+                            <radialGradient id="grad-kidney" cx="45%" cy="30%" r="65%">
+                                <stop offset="0%" stop-color="#FFAA88" />
+                                <stop offset="55%" stop-color="#CC5533" />
+                                <stop offset="100%" stop-color="#882211" />
+                            </radialGradient>
+                            <!-- Estômago/TGI -->
+                            <radialGradient id="grad-gi" cx="45%" cy="35%" r="60%">
+                                <stop offset="0%" stop-color="#AADDAA" />
+                                <stop offset="55%" stop-color="#558855" />
+                                <stop offset="100%" stop-color="#224422" />
+                            </radialGradient>
+                            <!-- Sistema hematológico -->
+                            <radialGradient id="grad-hemato" cx="45%" cy="35%" r="65%">
+                                <stop offset="0%" stop-color="#CC88CC" />
+                                <stop offset="55%" stop-color="#883399" />
+                                <stop offset="100%" stop-color="#441155" />
+                            </radialGradient>
+                            <!-- Cérebro (SNC) -->
+                            <radialGradient id="grad-brain" cx="45%" cy="30%" r="65%">
+                                <stop offset="0%" stop-color="#FFCCBB" />
+                                <stop offset="55%" stop-color="#DD8866" />
+                                <stop offset="100%" stop-color="#884433" />
+                            </radialGradient>
+                            <!-- Traqueia -->
+                            <linearGradient id="grad-trachea" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#AACCDD" />
+                                <stop offset="50%" stop-color="#DDEEFF" />
+                                <stop offset="100%" stop-color="#AACCDD" />
+                            </linearGradient>
                         </defs>
 
                         <!-- SILHUETA -->
-                        <ellipse class="body-silhouette" cx="200" cy="52" rx="36" ry="42" />
-                        <rect class="body-silhouette" x="188" y="91" width="24" height="22" rx="5" />
+                        <ellipse class="body-silhouette" cx="200" cy="52" rx="36" ry="42" fill="url(#skin-grad)"
+                            stroke="url(#skin-stroke-grad)" stroke-width="1.8" filter="url(#body-shadow)" />
+                        <rect class="body-silhouette" x="188" y="91" width="24" height="22" rx="5"
+                            fill="url(#skin-grad)" stroke="url(#skin-stroke-grad)" stroke-width="1.8" />
                         <path class="body-silhouette"
-                            d="M136,113 L264,113 L266,120 Q268,160 268,200 Q268,260 260,302 L140,302 Q132,260 132,200 Q132,160 134,120 Z" />
+                            d="M136,113 L264,113 L266,120 Q268,160 268,200 Q268,260 260,302 L140,302 Q132,260 132,200 Q132,160 134,120 Z"
+                            fill="url(#skin-grad)" stroke="url(#skin-stroke-grad)" stroke-width="1.8" />
+                        <path class="body-silhouette" d="M136,118 L108,114 L92,202 L92,232 L108,234 L120,192 L136,156 Z"
+                            fill="url(#skin-grad)" stroke="url(#skin-stroke-grad)" stroke-width="1.8" />
                         <path class="body-silhouette"
-                            d="M136,118 L108,114 L92,202 L92,232 L108,234 L120,192 L136,156 Z" />
+                            d="M264,118 L292,114 L308,202 L308,232 L292,234 L280,192 L264,156 Z" fill="url(#skin-grad)"
+                            stroke="url(#skin-stroke-grad)" stroke-width="1.8" />
                         <path class="body-silhouette"
-                            d="M264,118 L292,114 L308,202 L308,232 L292,234 L280,192 L264,156 Z" />
-                        <path class="body-silhouette"
-                            d="M140,302 L148,430 L172,430 L176,320 L200,316 L224,320 L228,430 L252,430 L260,302 Z" />
+                            d="M140,302 L148,430 L172,430 L176,320 L200,316 L224,320 L228,430 L252,430 L260,302 Z"
+                            fill="url(#skin-grad)" stroke="url(#skin-stroke-grad)" stroke-width="1.8" />
 
                         <!-- LINHAS DE REFERÊNCIA -->
                         <line class="ll" x1="176" y1="52" x2="106" y2="52" />
@@ -1448,49 +1544,182 @@
                         <circle class="ll-dot" cx="294" cy="229" r="2.5" />
 
                         <!-- ÓRGÃOS -->
+
+                        <!-- 1. SNC — cérebro com hemisférios e giros -->
                         <g data-organ="snc" class="organ-group" role="button" tabindex="0"
                             aria-label="Sistema Nervoso Central">
                             <title>Sistema Nervoso Central — clique para detalhes</title>
-                            <ellipse class="organ-shape" cx="200" cy="50" rx="23" ry="27" />
-                            <path class="organ-detail" d="M190,40 Q196,45 191,51 Q187,57 193,61" fill="none"
-                                stroke-linecap="round" />
-                            <path class="organ-detail" d="M200,38 Q207,44 202,51 Q198,57 205,61" fill="none"
-                                stroke-linecap="round" />
+                            <!-- Hemisfério esquerdo -->
+                            <path class="organ-shape" fill="url(#grad-brain)" d="M177,38 C174,28 178,18 188,16 C194,14 200,17 200,22
+                                   L200,68 C197,72 192,74 187,72 C180,69 175,62 175,55
+                                   C173,49 174,43 177,38 Z" />
+                            <!-- Hemisfério direito -->
+                            <path class="organ-shape" fill="url(#grad-brain)" d="M223,38 C226,28 222,18 212,16 C206,14 200,17 200,22
+                                   L200,68 C203,72 208,74 213,72 C220,69 225,62 225,55
+                                   C227,49 226,43 223,38 Z" />
+                            <!-- Sulco central -->
+                            <line x1="200" y1="20" x2="200" y2="70" stroke="rgba(100,50,30,0.35)" stroke-width="1.2"
+                                stroke-linecap="round" fill="none" pointer-events="none" />
+                            <!-- Giros hemisfério esquerdo -->
+                            <path fill="none" stroke="rgba(120,60,40,0.30)" stroke-width="1" stroke-linecap="round"
+                                pointer-events="none" d="M180,28 C182,25 187,26 186,30" />
+                            <path fill="none" stroke="rgba(120,60,40,0.30)" stroke-width="1" stroke-linecap="round"
+                                pointer-events="none" d="M178,40 C181,36 188,37 186,42" />
+                            <path fill="none" stroke="rgba(120,60,40,0.30)" stroke-width="1" stroke-linecap="round"
+                                pointer-events="none" d="M179,52 C182,48 188,49 187,54" />
+                            <!-- Giros hemisfério direito -->
+                            <path fill="none" stroke="rgba(120,60,40,0.30)" stroke-width="1" stroke-linecap="round"
+                                pointer-events="none" d="M220,28 C218,25 213,26 214,30" />
+                            <path fill="none" stroke="rgba(120,60,40,0.30)" stroke-width="1" stroke-linecap="round"
+                                pointer-events="none" d="M222,40 C219,36 212,37 214,42" />
+                            <path fill="none" stroke="rgba(120,60,40,0.30)" stroke-width="1" stroke-linecap="round"
+                                pointer-events="none" d="M221,52 C218,48 212,49 213,54" />
                         </g>
+
+                        <!-- 2. Respiratório — pulmões com lobos e traqueia -->
                         <g data-organ="respiratorio" class="organ-group" role="button" tabindex="0"
                             aria-label="Sistema Respiratório">
                             <title>Sistema Respiratório — clique para detalhes</title>
-                            <path class="organ-shape"
-                                d="M152,128 Q148,133 147,146 Q146,161 149,172 Q152,181 158,183 Q166,185 167,174 L168,138 Q165,125 159,125 Q153,125 152,128 Z" />
-                            <path class="organ-shape"
-                                d="M248,128 Q252,133 253,146 Q254,161 251,172 Q248,181 242,183 Q234,185 233,174 L232,138 Q235,125 241,125 Q247,125 248,128 Z" />
-                            <rect class="organ-shape organ-trachea" x="196" y="114" width="8" height="20" rx="3" />
+                            <!-- Pulmão esquerdo -->
+                            <path class="organ-shape" fill="url(#grad-lung-l)" d="M152,130 C148,134 146,145 146,158
+                                   C146,171 148,182 153,186
+                                   C157,189 162,187 164,181
+                                   C166,175 166,162 165,148
+                                   C164,134 160,127 155,126
+                                   C153,125 152,127 152,130 Z" />
+                            <!-- Fissura oblíqua esq -->
+                            <path fill="none" stroke="rgba(80,20,20,0.25)" stroke-width="1" stroke-linecap="round"
+                                pointer-events="none" d="M153,136 C157,148 160,162 158,178" />
+                            <!-- Pulmão direito -->
+                            <path class="organ-shape" fill="url(#grad-lung-r)" d="M248,130 C252,134 254,145 254,158
+                                   C254,171 252,182 247,186
+                                   C243,189 238,187 236,181
+                                   C234,175 234,162 235,148
+                                   C236,134 240,127 245,126
+                                   C247,125 248,127 248,130 Z" />
+                            <!-- Fissura oblíqua dir -->
+                            <path fill="none" stroke="rgba(80,20,20,0.25)" stroke-width="1" stroke-linecap="round"
+                                pointer-events="none" d="M247,136 C243,148 240,162 242,178" />
+                            <!-- Fissura horizontal dir -->
+                            <path fill="none" stroke="rgba(80,20,20,0.20)" stroke-width="0.8" stroke-linecap="round"
+                                pointer-events="none" d="M235,152 C239,150 245,151 248,150" />
+                            <!-- Traqueia -->
+                            <rect class="organ-shape organ-trachea" fill="url(#grad-trachea)" x="196" y="114" width="8"
+                                height="20" rx="3" />
+                            <!-- Carina (bifurcação) -->
+                            <path fill="none" stroke="rgba(150,200,220,0.50)" stroke-width="1.2" stroke-linecap="round"
+                                pointer-events="none" d="M200,134 L168,142 M200,134 L232,142" />
                         </g>
+
+                        <!-- 3. Cardiovascular — coração com câmaras e aorta -->
                         <g data-organ="cardiovascular" class="organ-group" role="button" tabindex="0"
                             aria-label="Coração">
                             <title>Sistema Cardiovascular — clique para detalhes</title>
-                            <path class="organ-shape"
-                                d="M200,178 C200,178 177,164 177,151 C177,142 184,137 191,140 C195,142 198,146 200,150 C202,146 205,142 209,140 C216,137 223,142 223,151 C223,164 200,178 200,178 Z" />
+                            <!-- Corpo principal -->
+                            <path class="organ-shape" fill="url(#grad-heart)" d="M200,180 C200,180 175,163 175,149
+                                   C175,139 182,134 190,137
+                                   C194,139 197,143 200,148
+                                   C203,143 206,139 210,137
+                                   C218,134 225,139 225,149
+                                   C225,163 200,180 200,180 Z" />
+                            <!-- Aurícula direita -->
+                            <path class="organ-shape" fill="url(#grad-heart)" d="M183,140 C179,137 176,140 177,145
+                                   C178,149 181,151 184,149
+                                   C186,147 186,143 183,140 Z" opacity="0.75" />
+                            <!-- Aurícula esquerda -->
+                            <path class="organ-shape" fill="url(#grad-heart)" d="M217,140 C221,137 224,140 223,145
+                                   C222,149 219,151 216,149
+                                   C214,147 214,143 217,140 Z" opacity="0.75" />
+                            <!-- Sulco interventricular -->
+                            <path fill="none" stroke="rgba(80,0,0,0.30)" stroke-width="1" stroke-linecap="round"
+                                pointer-events="none" d="M200,148 C199,158 198,168 199,178" />
+                            <!-- Reflexo de luz superior -->
+                            <path fill="none" stroke="rgba(255,180,180,0.22)" stroke-width="2" stroke-linecap="round"
+                                pointer-events="none" d="M190,142 C193,139 198,138 201,140" />
+                            <!-- Aorta -->
+                            <path fill="none" stroke="#CC4444" stroke-width="2.5" stroke-linecap="round"
+                                pointer-events="none" d="M203,137 C203,130 208,126 213,128 C218,130 220,136 217,139" />
                         </g>
+
+                        <!-- 4. Fígado anatômico com lobos e vesícula -->
                         <g data-organ="figado" class="organ-group" role="button" tabindex="0" aria-label="Fígado">
                             <title>Fígado — Metabolismo Hepático — clique para detalhes</title>
-                            <ellipse class="organ-shape" cx="228" cy="208" rx="24" ry="15"
-                                transform="rotate(-8 228 208)" />
+                            <!-- Lobo direito -->
+                            <path class="organ-shape" fill="url(#grad-liver)" d="M210,196 C215,192 228,193 236,198
+                                   C242,202 244,210 241,216
+                                   C238,222 230,225 222,223
+                                   C214,221 208,215 208,208
+                                   C208,203 209,198 210,196 Z" />
+                            <!-- Lobo esquerdo -->
+                            <path class="organ-shape" fill="url(#grad-liver)" d="M198,200 C203,196 210,197 210,204
+                                   C210,210 205,215 199,213
+                                   C194,211 192,206 195,202
+                                   C196,201 197,200 198,200 Z" opacity="0.88" />
+                            <!-- Vesícula biliar -->
+                            <ellipse cx="216" cy="221" rx="5" ry="3.5" fill="#8BC34A" fill-opacity="0.60"
+                                stroke="#558822" stroke-width="0.8" pointer-events="none" />
+                            <!-- Sulco entre lobos -->
+                            <path fill="none" stroke="rgba(60,20,5,0.28)" stroke-width="1" stroke-linecap="round"
+                                pointer-events="none" d="M210,197 C210,204 210,212 210,222" />
                         </g>
+
+                        <!-- 5. Rins com córtex e pelve renal -->
                         <g data-organ="rins" class="organ-group" role="button" tabindex="0" aria-label="Rins">
                             <title>Rins — Metabolismo Renal — clique para detalhes</title>
-                            <ellipse class="organ-shape" cx="163" cy="220" rx="10" ry="15" />
-                            <ellipse class="organ-shape" cx="237" cy="222" rx="10" ry="15" />
+                            <!-- Rim esquerdo — córtex -->
+                            <ellipse class="organ-shape" fill="url(#grad-kidney)" cx="163" cy="220" rx="10" ry="15" />
+                            <!-- Pelve renal esq -->
+                            <ellipse fill="rgba(255,200,160,0.30)" cx="165" cy="220" rx="5" ry="8"
+                                pointer-events="none" />
+                            <!-- Hilo renal esq -->
+                            <path fill="none" stroke="rgba(150,50,20,0.35)" stroke-width="1" stroke-linecap="round"
+                                pointer-events="none" d="M173,218 C170,220 170,222 173,223" />
+                            <!-- Rim direito — córtex -->
+                            <ellipse class="organ-shape" fill="url(#grad-kidney)" cx="237" cy="222" rx="10" ry="15" />
+                            <!-- Pelve renal dir -->
+                            <ellipse fill="rgba(255,200,160,0.30)" cx="235" cy="222" rx="5" ry="8"
+                                pointer-events="none" />
+                            <!-- Hilo renal dir -->
+                            <path fill="none" stroke="rgba(150,50,20,0.35)" stroke-width="1" stroke-linecap="round"
+                                pointer-events="none" d="M227,220 C230,222 230,224 227,225" />
                         </g>
+
+                        <!-- 6. TGI — estômago com curvatura e duodeno -->
                         <g data-organ="gastrointestinal" class="organ-group" role="button" tabindex="0"
                             aria-label="Trato Gastrointestinal">
                             <title>Trato Gastrointestinal — clique para detalhes</title>
-                            <ellipse class="organ-shape" cx="192" cy="228" rx="18" ry="13" />
+                            <!-- Estômago -->
+                            <path class="organ-shape" fill="url(#grad-gi)" d="M182,218 C178,216 176,220 177,226
+                                   C178,233 183,237 190,237
+                                   C197,237 204,234 205,228
+                                   C206,222 202,217 196,216
+                                   C191,215 185,217 182,218 Z" />
+                            <!-- Curvatura maior -->
+                            <path fill="none" stroke="rgba(30,80,30,0.25)" stroke-width="1" stroke-linecap="round"
+                                pointer-events="none" d="M179,224 C180,229 184,234 190,235" />
+                            <!-- Duodeno -->
+                            <path fill="none" stroke="rgba(100,160,80,0.45)" stroke-width="2" stroke-linecap="round"
+                                pointer-events="none" d="M205,228 C208,228 210,232 208,236 C206,240 202,240 200,238" />
                         </g>
+
+                        <!-- 7. Hematológico — baço + representação hematológica -->
                         <g data-organ="hematologico" class="organ-group" role="button" tabindex="0"
                             aria-label="Sistema Hematológico">
                             <title>Sistema Hematológico — clique para detalhes</title>
-                            <ellipse class="organ-shape" cx="200" cy="284" rx="35" ry="13" />
+                            <!-- Forma principal (medula/sistema) -->
+                            <ellipse class="organ-shape" fill="url(#grad-hemato)" cx="200" cy="284" rx="35" ry="13" />
+                            <!-- Baço -->
+                            <ellipse class="organ-shape" fill="url(#grad-hemato)" cx="172" cy="260" rx="9" ry="12"
+                                opacity="0.85" />
+                            <!-- Detalhe interno do baço -->
+                            <path fill="none" stroke="rgba(100,20,100,0.25)" stroke-width="1" stroke-linecap="round"
+                                pointer-events="none" d="M170,253 C172,257 173,262 171,267" />
+                            <!-- Células decorativas -->
+                            <circle cx="188" cy="284" r="2.5" fill="rgba(200,120,220,0.35)" pointer-events="none" />
+                            <circle cx="200" cy="281" r="2.5" fill="rgba(200,120,220,0.35)" pointer-events="none" />
+                            <circle cx="212" cy="284" r="2.5" fill="rgba(200,120,220,0.35)" pointer-events="none" />
+                            <circle cx="194" cy="288" r="2" fill="rgba(200,120,220,0.28)" pointer-events="none" />
+                            <circle cx="207" cy="288" r="2" fill="rgba(200,120,220,0.28)" pointer-events="none" />
                         </g>
 
                         <!-- LABELS -->
@@ -1784,7 +2013,6 @@
         }
 
         function buildAndDraw() {
-            // Preserve existing positions
             const prevPos = {};
             G.nodes.forEach(n => { prevPos[n.id] = { x: n.x, y: n.y, vx: n.vx || 0, vy: n.vy || 0 }; });
 
@@ -1826,7 +2054,6 @@
             if (G.simulation) G.simulation.stop();
             const { w, h } = getContainerSize();
 
-            // Safe links entram na física com força fraca para manter cluster coeso
             const allLinksForSim = [
                 ...G.links,
                 ...G.safeLinks.map(l => ({ ...l, severity: 'safe', _isSafe: true }))
@@ -1858,7 +2085,6 @@
 
             const nodeById = new Map(G.nodes.map(n => [n.id, n]));
 
-            // ── Safe links ──────────────────────────────
             d3.select('#g-safe-links').selectAll('line').remove();
             d3.select('#g-safe-links').selectAll('line')
                 .data(G.safeLinks)
@@ -1868,7 +2094,6 @@
                 .attr('opacity', SEV.safe.edgeOpacity)
                 .style('pointer-events', 'none');
 
-            // ── Real links (visible, pointer-events off — hit layer handles interaction) ──
             d3.select('#g-links').selectAll('line').remove();
             d3.select('#g-links').selectAll('line')
                 .data(G.links)
@@ -1880,7 +2105,6 @@
                 .attr('opacity', d => SEV[d.severity].edgeOpacity)
                 .style('pointer-events', 'none');
 
-            // ── Hit-area links (invisible wide lines for easy clicking) ──────────────
             d3.select('#g-link-hits').selectAll('line').remove();
             d3.select('#g-link-hits').selectAll('line')
                 .data(G.links)
@@ -1906,7 +2130,6 @@
                 })
                 .on('click', (event, d) => openInteractionPanel(d.interaction));
 
-            // ── Halos (glow rings) ───────────────────────
             d3.select('#g-halos').selectAll('circle').remove();
             d3.select('#g-halos').selectAll('circle')
                 .data(G.nodes.filter(n => n.severity !== 'safe'))
@@ -1922,7 +2145,6 @@
                 .attr('opacity', .4)
                 .attr('pointer-events', 'none');
 
-            // ── Nodes ────────────────────────────────────
             d3.select('#g-nodes').selectAll('circle').remove();
             d3.select('#g-nodes').selectAll('circle')
                 .data(G.nodes)
@@ -1947,7 +2169,6 @@
                 )
                 .on('mouseenter', function (event, d) {
                     d3.select(this).attr('r', 14).attr('stroke-width', 3);
-                    // grow halo
                     d3.select('#g-halos').selectAll('circle')
                         .filter(h => h.id === d.id)
                         .attr('r', 24).attr('opacity', .65);
@@ -1964,7 +2185,6 @@
                     resetHighlight();
                 });
 
-            // ── Labels ───────────────────────────────────
             d3.select('#g-labels').selectAll('text').remove();
             d3.select('#g-labels').selectAll('text')
                 .data(G.nodes)
@@ -1983,37 +2203,30 @@
         function tickGraph() {
             const nb = new Map(G.nodes.map(n => [n.id, n]));
 
-            // Safe links — manual resolve
             d3.select('#g-safe-links').selectAll('line')
                 .attr('x1', d => nb.get(typeof d.source === 'string' ? d.source : d.source.id)?.x ?? 0)
                 .attr('y1', d => nb.get(typeof d.source === 'string' ? d.source : d.source.id)?.y ?? 0)
                 .attr('x2', d => nb.get(typeof d.target === 'string' ? d.target : d.target.id)?.x ?? 0)
                 .attr('y2', d => nb.get(typeof d.target === 'string' ? d.target : d.target.id)?.y ?? 0);
 
-            // Real links — D3 resolved
             d3.select('#g-links').selectAll('line')
                 .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
                 .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
 
-            // Hit-area links
             d3.select('#g-link-hits').selectAll('line')
                 .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
                 .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
 
-            // Halos
             d3.select('#g-halos').selectAll('circle')
                 .attr('cx', d => d.x).attr('cy', d => d.y);
 
-            // Nodes
             d3.select('#g-nodes').selectAll('circle')
                 .attr('cx', d => d.x).attr('cy', d => d.y);
 
-            // Labels
             d3.select('#g-labels').selectAll('text')
                 .attr('x', d => d.x).attr('y', d => d.y);
         }
 
-        // ── Highlight ──────────────────────────────────
         function highlightConnected(nodeId) {
             const connected = new Set([nodeId]);
             G.links.forEach(l => {
@@ -2039,7 +2252,6 @@
             d3.select('#g-safe-links').selectAll('line').attr('opacity', SEV.safe.edgeOpacity);
         }
 
-        // ── Layout alternativo: Radial ─────────────────
         function applyRadialLayout() {
             if (G.simulation) G.simulation.stop();
             const { w, h } = getContainerSize();
@@ -2056,7 +2268,6 @@
             setTimeout(() => { G.nodes.forEach(n => { n.fx = null; n.fy = null; }); }, 800);
         }
 
-        // ── Layout alternativo: Grid ────────────────────
         function applyGridLayout() {
             if (G.simulation) G.simulation.stop();
             const { w, h } = getContainerSize();
@@ -2072,7 +2283,6 @@
             setTimeout(() => { G.nodes.forEach(n => { n.fx = null; n.fy = null; }); }, 800);
         }
 
-        // ── runLayout (called by buttons) ───────────────
         function runLayout(name) {
             state.currentLayout = name;
             if (name === 'force') {
@@ -2247,6 +2457,22 @@
         }
 
         function openOrganPanel(organ) {
+            // ── Zoom: limpar estado anterior e aplicar no órgão clicado ──
+            document.querySelectorAll('.organ-group.organ-zoom-active')
+                .forEach(el => el.classList.remove('organ-zoom-active'));
+
+            const organEl = document.querySelector(`[data-organ="${organ.key}"]`);
+            if (organEl) {
+                organEl.classList.add('organ-zoom-active');
+                const removeZoom = () => {
+                    organEl.classList.remove('organ-zoom-active');
+                    document.getElementById('close-panel-btn').removeEventListener('click', removeZoom);
+                    document.getElementById('panel-overlay').removeEventListener('click', removeZoom);
+                };
+                document.getElementById('close-panel-btn').addEventListener('click', removeZoom);
+                document.getElementById('panel-overlay').addEventListener('click', removeZoom);
+            }
+
             const affected = state.interactions.filter(i => i.systems_affected.includes(organ.key));
             document.getElementById('panel-title-group').innerHTML = `
     <div class="panel-drugs">${organ.emoji} ${organ.label}</div>
