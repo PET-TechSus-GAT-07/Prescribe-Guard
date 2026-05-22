@@ -1327,9 +1327,10 @@
                                 </feMerge>
                             </filter>
                         </defs>
-                        <!-- Layer order: safe links → real links → halos → nodes → labels -->
+                        <!-- Layer order: safe links → real links → hit areas → halos → nodes → labels -->
                         <g id="g-safe-links"></g>
                         <g id="g-links"></g>
+                        <g id="g-link-hits"></g>
                         <g id="g-halos"></g>
                         <g id="g-nodes"></g>
                         <g id="g-labels"></g>
@@ -1648,23 +1649,23 @@
         const SEV = {
             contraindicated: {
                 nodeColor: '#2A0808', stroke: '#FF4444', filter: 'url(#gf-contra)',
-                textColor: '#FF9999', edgeColor: '#FF3333', edgeWidth: 2.8, edgeDash: null, edgeOpacity: .92,
+                textColor: '#FF9999', edgeColor: '#FF3333', edgeWidth: 6, edgeDash: null, edgeOpacity: .92,
             },
             major: {
                 nodeColor: '#241000', stroke: '#FF8844', filter: 'url(#gf-major)',
-                textColor: '#FFCC99', edgeColor: '#FF7733', edgeWidth: 2.0, edgeDash: null, edgeOpacity: .85,
+                textColor: '#FFCC99', edgeColor: '#FF7733', edgeWidth: 4.5, edgeDash: null, edgeOpacity: .85,
             },
             moderate: {
                 nodeColor: '#211A00', stroke: '#FFDD55', filter: 'url(#gf-moderate)',
-                textColor: '#FFE899', edgeColor: '#FFCC44', edgeWidth: 1.5, edgeDash: '7,4', edgeOpacity: .78,
+                textColor: '#FFE899', edgeColor: '#FFCC44', edgeWidth: 3.5, edgeDash: '10,5', edgeOpacity: .78,
             },
             minor: {
                 nodeColor: '#101A08', stroke: '#66DD55', filter: 'url(#gf-minor)',
-                textColor: '#BBEEAA', edgeColor: '#55CC44', edgeWidth: 1.2, edgeDash: '2,5', edgeOpacity: .68,
+                textColor: '#BBEEAA', edgeColor: '#55CC44', edgeWidth: 2.5, edgeDash: '3,6', edgeOpacity: .68,
             },
             safe: {
                 nodeColor: '#0F1825', stroke: '#2A4A7F', filter: null,
-                textColor: '#5A7899', edgeColor: '#1E3A6E', edgeWidth: 0.7, edgeDash: null, edgeOpacity: .2,
+                textColor: '#5A7899', edgeColor: '#1E3A6E', edgeWidth: 1, edgeDash: null, edgeOpacity: .2,
             },
         };
 
@@ -1776,7 +1777,7 @@
 
         function clearGraph() {
             if (G.simulation) { G.simulation.stop(); G.simulation = null; }
-            ['g-safe-links', 'g-links', 'g-halos', 'g-nodes', 'g-labels'].forEach(id => {
+            ['g-safe-links', 'g-links', 'g-link-hits', 'g-halos', 'g-nodes', 'g-labels'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.innerHTML = '';
             });
@@ -1867,7 +1868,7 @@
                 .attr('opacity', SEV.safe.edgeOpacity)
                 .style('pointer-events', 'none');
 
-            // ── Real links ──────────────────────────────
+            // ── Real links (visible, pointer-events off — hit layer handles interaction) ──
             d3.select('#g-links').selectAll('line').remove();
             d3.select('#g-links').selectAll('line')
                 .data(G.links)
@@ -1877,16 +1878,28 @@
                 .attr('stroke-dasharray', d => SEV[d.severity].edgeDash || null)
                 .attr('stroke-linecap', 'round')
                 .attr('opacity', d => SEV[d.severity].edgeOpacity)
+                .style('pointer-events', 'none');
+
+            // ── Hit-area links (invisible wide lines for easy clicking) ──────────────
+            d3.select('#g-link-hits').selectAll('line').remove();
+            d3.select('#g-link-hits').selectAll('line')
+                .data(G.links)
+                .join('line')
+                .attr('stroke', 'transparent')
+                .attr('stroke-width', 18)
+                .attr('stroke-linecap', 'round')
                 .style('cursor', 'pointer')
                 .on('mouseenter', function (event, d) {
-                    d3.select(this)
+                    d3.select('#g-links').selectAll('line')
+                        .filter(l => l === d)
                         .attr('stroke-width', SEV[d.severity].edgeWidth + 2)
                         .attr('opacity', 1);
                     showEdgeTip(event, d);
                 })
                 .on('mousemove', moveTip)
                 .on('mouseleave', function (event, d) {
-                    d3.select(this)
+                    d3.select('#g-links').selectAll('line')
+                        .filter(l => l === d)
                         .attr('stroke-width', SEV[d.severity].edgeWidth)
                         .attr('opacity', SEV[d.severity].edgeOpacity);
                     hideTip();
@@ -1979,6 +1992,11 @@
 
             // Real links — D3 resolved
             d3.select('#g-links').selectAll('line')
+                .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+                .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+
+            // Hit-area links
+            d3.select('#g-link-hits').selectAll('line')
                 .attr('x1', d => d.source.x).attr('y1', d => d.source.y)
                 .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
 
