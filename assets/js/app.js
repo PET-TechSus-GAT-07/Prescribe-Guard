@@ -1,20 +1,79 @@
-const APP_DATA_URL = './data/app-data.json';
+const SQLITE_DB_URL = './data/prescribe_guard.sqlite';
+const SQLITE_WORKER_URL = './assets/js/sqlite-data-worker.js?sqlite3.dir=../vendor/sqlite-wasm';
 
-let INTERACTIONS_DB = [];
 let DRUG_CATALOG = [];
-let INTERACTION_INDEX = new Map();
 let DRUG_BY_NAME = new Map();
+let DATA_STORE = null;
+let interactionRequestId = 0;
 
-async function loadAppData() {
-    const response = await fetch(APP_DATA_URL, { cache: 'no-store' });
-    if (!response.ok) {
-        throw new Error(`Falha ao carregar ${APP_DATA_URL}: ${response.status}`);
+class BrowserSqliteDataStore {
+    constructor({ workerUrl, dbUrl }) {
+        if (!window.Worker) {
+            throw new Error('Este navegador não oferece suporte a Web Workers.');
+        }
+
+        this.dbUrl = dbUrl;
+        this.nextId = 0;
+        this.pending = new Map();
+        this.worker = new Worker(workerUrl, { name: 'prescribe-guard-sqlite' });
+        this.worker.addEventListener('message', event => this.handleMessage(event));
+        this.worker.addEventListener('error', event => {
+            this.rejectAll(new Error(event.message || 'Falha ao executar o Worker SQLite.'));
+        });
+        this.ready = this.request('init', { dbUrl });
     }
 
-    const data = await response.json();
+    handleMessage(event) {
+        const { id, ok, result, error } = event.data || {};
+        const pending = this.pending.get(id);
+        if (!pending) return;
+
+        this.pending.delete(id);
+        if (ok) {
+            pending.resolve(result);
+        } else {
+            pending.reject(new Error(error?.message || 'Falha na consulta SQLite.'));
+        }
+    }
+
+    rejectAll(error) {
+        this.pending.forEach(({ reject }) => reject(error));
+        this.pending.clear();
+    }
+
+    request(type, payload = {}) {
+        const id = ++this.nextId;
+        return new Promise((resolve, reject) => {
+            this.pending.set(id, { resolve, reject });
+            this.worker.postMessage({ id, type, payload });
+        });
+    }
+
+    async loadCatalog() {
+        await this.ready;
+        return this.request('loadCatalog');
+    }
+
+    async findDrugByName(name) {
+        await this.ready;
+        return this.request('findDrugByName', { name });
+    }
+
+    async findInteractionsForPairs(pairKeys) {
+        await this.ready;
+        return this.request('findInteractionsForPairs', { pairKeys });
+    }
+}
+
+async function loadAppData() {
+    const workerUrl = new URL(SQLITE_WORKER_URL, window.location.href);
+    const dbUrl = new URL(SQLITE_DB_URL, window.location.href).href;
+    DATA_STORE = new BrowserSqliteDataStore({ workerUrl, dbUrl });
+    const initInfo = await DATA_STORE.ready;
+    const drugCatalog = await DATA_STORE.loadCatalog();
     return {
-        interactions: Array.isArray(data.interactions) ? data.interactions : [],
-        drugCatalog: Array.isArray(data.drugCatalog) ? data.drugCatalog : [],
+        drugCatalog: Array.isArray(drugCatalog) ? drugCatalog : [],
+        metadata: initInfo?.metadata || {},
     };
 }
 
@@ -81,34 +140,58 @@ const ORGANS = [
         // ════════════════════════════════════════════════
         function canonicalPairKey(drugA, drugB) {
             return [drugA, drugB]
-                .map(name => name.trim().toLowerCase())
+                .map(name => name.trim().toLocaleLowerCase('pt-BR'))
                 .sort()
                 .join('||');
         }
 
         function rebuildDataIndexes() {
-            INTERACTION_INDEX = new Map(
-                INTERACTIONS_DB.map(interaction => [
-                    canonicalPairKey(interaction.drug_a, interaction.drug_b),
-                    interaction,
-                ])
-            );
-
             DRUG_BY_NAME = new Map(
-                DRUG_CATALOG.map(drug => [drug.name.toLowerCase(), drug])
+                DRUG_CATALOG.map(drug => [drug.name.toLocaleLowerCase('pt-BR'), drug])
             );
         }
 
-        function computeInteractions() {
-            const found = [];
+        async function computeInteractions() {
+            if (!DATA_STORE || state.drugs.length < 2) return [];
+
+            const pairs = [];
             const drugs = state.drugs;
             for (let i = 0; i < drugs.length; i++) {
                 for (let j = i + 1; j < drugs.length; j++) {
-                    const match = INTERACTION_INDEX.get(canonicalPairKey(drugs[i], drugs[j]));
-                    if (match) found.push({ ...match, drug_a: drugs[i], drug_b: drugs[j] });
+                    pairs.push({
+                        key: canonicalPairKey(drugs[i], drugs[j]),
+                        drug_a: drugs[i],
+                        drug_b: drugs[j],
+                    });
                 }
             }
-            return found;
+
+            const matches = await DATA_STORE.findInteractionsForPairs(pairs.map(pair => pair.key));
+            const matchByPair = new Map(matches.map(interaction => [interaction.pair_key, interaction]));
+            return pairs
+                .map(pair => {
+                    const match = matchByPair.get(pair.key);
+                    return match ? { ...match, drug_a: pair.drug_a, drug_b: pair.drug_b } : null;
+                })
+                .filter(Boolean);
+        }
+
+        async function refreshInteractions() {
+            const requestId = ++interactionRequestId;
+            let interactions = [];
+            try {
+                interactions = await computeInteractions();
+            } catch (error) {
+                console.error(error);
+                announceSR('Falha ao consultar interações no SQLite local.');
+                return;
+            }
+            if (requestId !== interactionRequestId) return;
+
+            state.interactions = interactions;
+            renderCounter();
+            renderGraph();
+            renderOrgans();
         }
 
         function worstSevForDrug(name) {
@@ -495,7 +578,7 @@ const ORGANS = [
 
         function showNodeTip(event, d) {
             const s = SEV[d.severity];
-            const info = DRUG_BY_NAME.get(d.id.toLowerCase()) || {};
+            const info = DRUG_BY_NAME.get(d.id.toLocaleLowerCase('pt-BR')) || {};
             const count = G.links.filter(l => (l.source.id || l.source) === d.id || (l.target.id || l.target) === d.id).length;
             tipEl.innerHTML = `
     <strong style="color:${s.textColor}">${d.id}</strong>
@@ -692,21 +775,23 @@ const ORGANS = [
         // ════════════════════════════════════════════════
         //  ADD / REMOVE DRUGS
         // ════════════════════════════════════════════════
-        function addDrug(name) {
+        async function addDrug(name) {
             const trimmed = name.trim();
             if (!trimmed) return;
             if (state.drugs.includes(trimmed)) { announceSR(`${trimmed} já foi adicionado.`); return; }
             state.drugs.push(trimmed);
-            state.interactions = computeInteractions();
+            state.interactions = [];
             renderTags(); renderCounter(); renderGraph(); renderOrgans();
+            await refreshInteractions();
             announceSR(`${trimmed} adicionado. ${state.drugs.length} medicamentos. ${state.interactions.length} interações.`);
         }
 
-        function removeDrug(index) {
+        async function removeDrug(index) {
             const removed = state.drugs[index];
             state.drugs.splice(index, 1);
-            state.interactions = computeInteractions();
+            state.interactions = [];
             renderTags(); renderCounter(); renderGraph(); renderOrgans();
+            await refreshInteractions();
             announceSR(`${removed} removido.`);
             document.getElementById('drug-input').focus();
         }
@@ -727,24 +812,25 @@ const ORGANS = [
             analyzeButton.disabled = disabled || state.drugs.length < 2;
         }
 
-        function renderDataLoadError() {
+        function renderDataLoadError(error) {
+            console.error(error);
             hideAutocomplete();
             setControlsDisabled(true);
             input.value = '';
-            input.placeholder = 'Base local indisponível no momento.';
+            input.placeholder = 'Base SQLite indisponível no momento.';
             const emptyState = document.getElementById('graph-empty');
             if (emptyState) {
-                emptyState.querySelector('p').textContent = 'Não foi possível carregar a base local';
-                emptyState.querySelector('small').textContent = 'Atualize os arquivos em data/app-data.json e tente novamente.';
+                emptyState.querySelector('p').textContent = 'Não foi possível abrir a base SQLite';
+                emptyState.querySelector('small').textContent = 'Verifique data/prescribe_guard.sqlite e sqlite3.wasm.';
                 emptyState.style.display = '';
             }
-            announceSR('Falha ao carregar a base local de medicamentos.');
+            announceSR('Falha ao abrir a base SQLite local de medicamentos.');
         }
 
         function showAutocomplete(query) {
-            const q = query.toLowerCase();
+            const q = query.toLocaleLowerCase('pt-BR');
             acItems = q.length < 1 ? [] :
-                DRUG_CATALOG.filter(d => d.name.toLowerCase().includes(q) && !state.drugs.includes(d.name)).slice(0, 8);
+                DRUG_CATALOG.filter(d => d.name.toLocaleLowerCase('pt-BR').includes(q) && !state.drugs.includes(d.name)).slice(0, 8);
             listbox.innerHTML = ''; acActiveIndex = -1;
             if (!acItems.length) { listbox.classList.remove('open'); input.setAttribute('aria-activedescendant', ''); return; }
             acItems.forEach((drug, i) => {
@@ -774,15 +860,29 @@ const ORGANS = [
             if (index >= 0) input.setAttribute('aria-activedescendant', `ac-item-${index}`);
         }
 
-        function confirmDrug(name) {
+        async function findCanonicalDrugName(value) {
+            const trimmed = value.trim();
+            if (!trimmed) return '';
+
+            const cached = DRUG_BY_NAME.get(trimmed.toLocaleLowerCase('pt-BR'));
+            if (cached) return cached.name;
+
+            const match = DATA_STORE ? await DATA_STORE.findDrugByName(trimmed) : null;
+            return match?.name || trimmed;
+        }
+
+        async function confirmDrug(name) {
+            let drugName = name || '';
             if (!name) {
                 const val = input.value.trim();
-                if (acActiveIndex >= 0 && acItems[acActiveIndex]) { addDrug(acItems[acActiveIndex].name); }
-                else if (val) {
-                    const match = DRUG_BY_NAME.get(val.toLowerCase());
-                    addDrug(match ? match.name : val);
+                if (acActiveIndex >= 0 && acItems[acActiveIndex]) {
+                    drugName = acItems[acActiveIndex].name;
+                } else if (val) {
+                    drugName = await findCanonicalDrugName(val);
                 }
-            } else { addDrug(name); }
+            }
+
+            if (drugName) await addDrug(drugName);
             input.value = ''; hideAutocomplete(); input.focus();
         }
 
@@ -852,19 +952,17 @@ const ORGANS = [
 
             try {
                 const data = await loadAppData();
-                INTERACTIONS_DB = data.interactions;
                 DRUG_CATALOG = data.drugCatalog;
                 rebuildDataIndexes();
             } catch (error) {
-                console.error(error);
-                renderDataLoadError();
+                renderDataLoadError(error);
                 return;
             }
 
             setControlsDisabled(false);
             input.focus();
             input.placeholder = 'Ex: Varfarina, AAS, Sinvastatina...';
-            announceSR(`${DRUG_CATALOG.length} medicamentos carregados da base local.`);
+            announceSR(`${DRUG_CATALOG.length} medicamentos carregados do SQLite local.`);
         }
 
         init();

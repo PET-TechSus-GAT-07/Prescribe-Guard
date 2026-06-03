@@ -1,4 +1,6 @@
 config/api.local.json
+.env
+.env.local
 storage/*.sqlite
 storage/*.sqlite-shm
 storage/*.sqlite-wal
