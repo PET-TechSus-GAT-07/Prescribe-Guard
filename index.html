@@ -55,9 +55,8 @@
                         <path d="M13.5 13.5 L18 18" stroke-linecap="round" />
                     </svg>
                     <input type="text" id="drug-input" autocomplete="off" placeholder="Carregando base local..."
-                        disabled
-                        aria-label="Buscar medicamento" aria-autocomplete="list" aria-controls="autocomplete-listbox"
-                        aria-activedescendant="">
+                        disabled aria-label="Buscar medicamento" aria-autocomplete="list"
+                        aria-controls="autocomplete-listbox" aria-activedescendant="">
                     <div id="autocomplete-listbox" class="autocomplete-list" role="listbox"
                         aria-label="Sugestões de medicamentos"></div>
                 </div>
@@ -264,23 +263,47 @@
                                 <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
                                 <feComposite in="SourceGraphic" in2="blur" operator="over" />
                             </filter>
-                            <!-- Sombra lateral da silhueta -->
-                            <filter id="body-shadow" x="-10%" y="-5%" width="130%" height="115%">
-                                <feDropShadow dx="4" dy="6" stdDeviation="8" flood-color="#8899AA"
-                                    flood-opacity="0.22" />
+                            <!-- Profundidade da silhueta -->
+                            <filter id="body-shadow" x="-18%" y="-8%" width="136%" height="124%">
+                                <feDropShadow dx="0" dy="16" stdDeviation="14" flood-color="#64748B"
+                                    flood-opacity="0.20" />
+                                <feDropShadow dx="4" dy="4" stdDeviation="5" flood-color="#0F172A"
+                                    flood-opacity="0.08" />
                             </filter>
-                            <!-- Gradiente de pele para a silhueta -->
-                            <linearGradient id="skin-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" stop-color="#D4A882" stop-opacity="0.85" />
-                                <stop offset="40%" stop-color="#E8C4A0" stop-opacity="0.95" />
-                                <stop offset="70%" stop-color="#E2BAA0" stop-opacity="0.90" />
-                                <stop offset="100%" stop-color="#C8A080" stop-opacity="0.80" />
+                            <filter id="body-soft-glow" x="-30%" y="-20%" width="160%" height="150%">
+                                <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
+                                <feColorMatrix in="blur" type="matrix"
+                                    values="0 0 0 0 0.055 0 0 0 0 0.647 0 0 0 0 0.914 0 0 0 .32 0" result="glow" />
+                                <feMerge>
+                                    <feMergeNode in="glow" />
+                                    <feMergeNode in="SourceGraphic" />
+                                </feMerge>
+                            </filter>
+                            <!-- Gradiente clínico para a silhueta -->
+                            <linearGradient id="skin-grad" x1="12%" y1="0%" x2="88%" y2="100%">
+                                <stop offset="0%" stop-color="#F8FAFC" stop-opacity="0.34" />
+                                <stop offset="52%" stop-color="#E2E8F0" stop-opacity="0.26" />
+                                <stop offset="100%" stop-color="#CBD5E1" stop-opacity="0.20" />
                             </linearGradient>
                             <!-- Borda da silhueta -->
-                            <linearGradient id="skin-stroke-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stop-color="#B08060" />
-                                <stop offset="100%" stop-color="#987060" />
+                            <linearGradient id="skin-stroke-grad" x1="10%" y1="0%" x2="90%" y2="100%">
+                                <stop offset="0%" stop-color="#CBD5E1" />
+                                <stop offset="55%" stop-color="#94A3B8" />
+                                <stop offset="100%" stop-color="#64748B" />
                             </linearGradient>
+                            <linearGradient id="body-window-grad" x1="18%" y1="4%" x2="82%" y2="100%">
+                                <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.16" />
+                                <stop offset="44%" stop-color="#E2E8F0" stop-opacity="0.08" />
+                                <stop offset="100%" stop-color="#CBD5E1" stop-opacity="0.05" />
+                            </linearGradient>
+                            <linearGradient id="body-axis-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" stop-color="#0EA5E9" stop-opacity="0" />
+                                <stop offset="16%" stop-color="#0EA5E9" stop-opacity="0.34" />
+                                <stop offset="64%" stop-color="#38BDF8" stop-opacity="0.24" />
+                                <stop offset="100%" stop-color="#0EA5E9" stop-opacity="0" />
+                            </linearGradient>
+                            <path id="body-shape-path"
+                                d="m184.31 39.407c-2.4389 0.07883-3.6559 0.08033-4.8797 0.09384v0.09384c-1.2004-0.01201-2.3939-0.01652-4.7858-0.09384-39.289 0.35904-38.803 67.435-24.68 87.834 6.2768 12.553-0.0248 25.123-1.5953 37.677-16.296 15.257-69.012 9.9299-77.324 23.554-11.016 22.636-25.015 136.57-19.237 154.93-16.753 28.277 18.096 142.43 18.064 163.56-9.0447 52.676 14.379 68.409 26.932 68.409-0.0643-9.9139-18.388-22.691-12.715-33.876 4.7717-3.0742 3.5556 2.2366 11.402 6.9442-0.30838-3.7707-0.54017-7.8508-0.79764-12.012-1.0503-9.341-2.0133-18.776-2.7214-28.199-0.23254-1.3091-0.47227-2.5421-0.75071-3.7067-6.2768-9.4151 4.4727-102.43-2.4398-135.65 10.211-26.909 17.287-117.63 15.718-131.75 5.6409 38.15 2.7223 104.48 4.692 130.86-18.836 34.879-21.187 87.444-17.22 140.24 1.4124 7.9512 2.1093 18.309 2.7214 28.199 8.0075 71.217 24.235 137.21 22.991 154.18-14.061 68.619 4.1043 184.01 4.9735 196.13-0.93338 11.217-6.8215 27.589-2.5806 34.533-5.673 24.069-12.496 28.199-7.7887 42.322 4.7076 14.123 40.519 21.29 47.061 12.574 2.0358-13.221-3.1281-50.215-7.8356-56.492 2.5025-5.3754 8.2537-21.518 3.1436-37.677 9.3101-15.257 20.802-146.51 16.328-160.23 4.3089-6.181 8.8609-37.541 4.1742-46.035 0.38087-4.1414 1.1622-122.16 3.0964-124.92 3.4167-11.146 2.284-11.021 4.42-0.15238 2.1818 3.8267 1.7454 121.17 2.1263 125.31-4.6867 8.4948-1.1408 39.519 3.1681 45.7-4.4742 13.72 7.0181 144.97 16.328 160.23-5.1101 16.159 0.6411 32.301 3.1436 37.677-4.7076 6.2768-9.8715 43.27-7.8356 56.492 6.5421 8.715 42.353 1.5482 47.061-12.575 4.7075-14.123-2.1158-18.253-7.7887-42.322 4.2409-6.9446-1.6472-23.316-2.5806-34.533 0.8692-12.119 19.035-127.51 4.9735-196.13-1.2442-16.971 14.983-82.962 22.991-154.18 0.61204-9.89 1.3089-20.248 2.7214-28.199 3.9676-52.8 1.616-105.36-17.22-140.24 1.9697-26.377-0.94894-92.709 4.692-130.86-1.5692 14.123 5.5068 104.84 15.718 131.75-6.9126 33.218 3.8369 126.23-2.4398 135.65-0.27843 1.1646-0.51817 2.3976-0.75071 3.7067-0.70803 9.4225-1.6711 18.858-2.7214 28.199-0.25747 4.1607-0.48926 8.2408-0.79763 12.012 7.8459-4.7076 6.6298-10.018 11.402-6.9442 5.673 11.186-12.651 23.962-12.715 33.876 12.553 0 35.977-15.734 26.932-68.409-0.032-21.131 34.818-135.29 18.064-163.56 5.778-18.363-8.2208-132.29-19.237-154.93-8.3126-13.624-61.028-8.2966-77.324-23.554-1.5705-12.553-7.872-25.123-1.5953-37.677 14.123-20.399 14.609-87.475-24.68-87.834z" />
                             <!-- Coração -->
                             <radialGradient id="grad-heart" cx="45%" cy="35%" r="65%">
                                 <stop offset="0%" stop-color="#FF8888" />
@@ -337,44 +360,50 @@
                         </defs>
 
                         <!-- SILHUETA -->
-                        <ellipse class="body-silhouette" cx="200" cy="52" rx="36" ry="42" fill="url(#skin-grad)"
-                            stroke="url(#skin-stroke-grad)" stroke-width="1.8" filter="url(#body-shadow)" />
-                        <rect class="body-silhouette" x="188" y="91" width="24" height="22" rx="5"
-                            fill="url(#skin-grad)" stroke="url(#skin-stroke-grad)" stroke-width="1.8" />
-                        <path class="body-silhouette"
-                            d="M136,113 L264,113 L266,120 Q268,160 268,200 Q268,260 260,302 L140,302 Q132,260 132,200 Q132,160 134,120 Z"
-                            fill="url(#skin-grad)" stroke="url(#skin-stroke-grad)" stroke-width="1.8" />
-                        <path class="body-silhouette" d="M136,118 L108,114 L92,202 L92,232 L108,234 L120,192 L136,156 Z"
-                            fill="url(#skin-grad)" stroke="url(#skin-stroke-grad)" stroke-width="1.8" />
-                        <path class="body-silhouette"
-                            d="M264,118 L292,114 L308,202 L308,232 L292,234 L280,192 L264,156 Z" fill="url(#skin-grad)"
-                            stroke="url(#skin-stroke-grad)" stroke-width="1.8" />
-                        <path class="body-silhouette"
-                            d="M140,302 L148,430 L172,430 L176,320 L200,316 L224,320 L228,430 L252,430 L260,302 Z"
-                            fill="url(#skin-grad)" stroke="url(#skin-stroke-grad)" stroke-width="1.8" />
+                        <use class="body-aura" href="#body-shape-path"
+                            transform="translate(87 -5) scale(.80) translate(-37.897 -34.052)" />
+                        <use class="body-silhouette" href="#body-shape-path"
+                            transform="translate(87 -5) scale(.80) translate(-37.897 -34.052)" />
+
+                        <g class="body-anatomy" aria-hidden="true">
+                            <path class="body-window" d="M156,124
+                                   C176,114 225,114 244,124
+                                   C253,142 257,168 257,201
+                                   C257,238 251,285 238,315
+                                   C227,341 213,355 200,355
+                                   C187,355 173,341 162,315
+                                   C149,285 143,238 143,201
+                                   C143,168 147,142 156,124 Z" />
+                            <path class="body-axis" d="M200,96 C202,126 202,159 200,194 C198,232 198,270 200,316" />
+                            <path class="body-rib" d="M179,133 C164,141 155,157 154,176" />
+                            <path class="body-rib" d="M221,133 C236,141 245,157 246,176" />
+                            <path class="body-rib" d="M166,187 C178,196 190,200 200,200 C210,200 222,196 234,187" />
+                            <path class="body-scan-line" d="M139,186 C169,177 231,177 261,186" />
+                        </g>
 
                         <!-- LINHAS DE REFERÊNCIA -->
-                        <line class="ll" x1="176" y1="52" x2="106" y2="52" />
-                        <line class="ll" x1="148" y1="154" x2="106" y2="154" />
-                        <line class="ll" x1="153" y1="220" x2="106" y2="220" />
-                        <line class="ll" x1="166" y1="285" x2="106" y2="285" />
-                        <line class="ll" x1="222" y1="167" x2="294" y2="167" />
-                        <line class="ll" x1="250" y1="210" x2="294" y2="210" />
-                        <line class="ll" x1="207" y1="229" x2="294" y2="229" />
-                        <circle class="ll-dot" cx="106" cy="52" r="2.5" />
-                        <circle class="ll-dot" cx="106" cy="154" r="2.5" />
-                        <circle class="ll-dot" cx="106" cy="220" r="2.5" />
-                        <circle class="ll-dot" cx="106" cy="285" r="2.5" />
-                        <circle class="ll-dot" cx="294" cy="167" r="2.5" />
-                        <circle class="ll-dot" cx="294" cy="210" r="2.5" />
-                        <circle class="ll-dot" cx="294" cy="229" r="2.5" />
+                        <line class="ll" x1="176" y1="48" x2="52" y2="48" />
+                        <line class="ll" x1="148" y1="162" x2="52" y2="162" />
+                        <line class="ll" x1="153" y1="228" x2="52" y2="228" />
+                        <line class="ll" x1="166" y1="293" x2="52" y2="293" />
+                        <line class="ll" x1="222" y1="175" x2="348" y2="175" />
+                        <line class="ll" x1="250" y1="218" x2="348" y2="218" />
+                        <line class="ll" x1="207" y1="237" x2="348" y2="237" />
+                        <circle class="ll-dot" cx="52" cy="48" r="2.5" />
+                        <circle class="ll-dot" cx="52" cy="162" r="2.5" />
+                        <circle class="ll-dot" cx="52" cy="228" r="2.5" />
+                        <circle class="ll-dot" cx="52" cy="293" r="2.5" />
+                        <circle class="ll-dot" cx="348" cy="175" r="2.5" />
+                        <circle class="ll-dot" cx="348" cy="218" r="2.5" />
+                        <circle class="ll-dot" cx="348" cy="237" r="2.5" />
 
                         <!-- ÓRGÃOS -->
 
                         <!-- 1. SNC — cérebro com hemisférios e giros -->
-                        <g data-organ="snc" class="organ-group" role="button" tabindex="0"
+                        <g data-organ="snc" class="organ-group" role="button" tabindex="0" transform="translate(0 -4)"
                             aria-label="Sistema Nervoso Central">
                             <title>Sistema Nervoso Central — clique para detalhes</title>
+                            <ellipse class="organ-hit" cx="200" cy="44" rx="42" ry="44" />
                             <!-- Hemisfério esquerdo -->
                             <path class="organ-shape" fill="url(#grad-brain)" d="M177,38 C174,28 178,18 188,16 C194,14 200,17 200,22
                                    L200,68 C197,72 192,74 187,72 C180,69 175,62 175,55
@@ -403,9 +432,10 @@
                         </g>
 
                         <!-- 2. Respiratório — pulmões com lobos e traqueia -->
-                        <g data-organ="respiratorio" class="organ-group" role="button" tabindex="0"
+                        <g data-organ="respiratorio" class="organ-group" role="button" tabindex="0" transform="translate(0 8)"
                             aria-label="Sistema Respiratório">
                             <title>Sistema Respiratório — clique para detalhes</title>
+                            <ellipse class="organ-hit" cx="200" cy="158" rx="78" ry="52" />
                             <!-- Pulmão esquerdo -->
                             <path class="organ-shape" fill="url(#grad-lung-l)" d="M152,130 C148,134 146,145 146,158
                                    C146,171 148,182 153,186
@@ -438,9 +468,10 @@
                         </g>
 
                         <!-- 3. Cardiovascular — coração com câmaras e aorta -->
-                        <g data-organ="cardiovascular" class="organ-group" role="button" tabindex="0"
+                        <g data-organ="cardiovascular" class="organ-group" role="button" tabindex="0" transform="translate(0 8)"
                             aria-label="Coração">
                             <title>Sistema Cardiovascular — clique para detalhes</title>
+                            <ellipse class="organ-hit" cx="200" cy="157" rx="38" ry="40" />
                             <!-- Corpo principal -->
                             <path class="organ-shape" fill="url(#grad-heart)" d="M200,180 C200,180 175,163 175,149
                                    C175,139 182,134 190,137
@@ -468,8 +499,10 @@
                         </g>
 
                         <!-- 4. Fígado anatômico com lobos e vesícula -->
-                        <g data-organ="figado" class="organ-group" role="button" tabindex="0" aria-label="Fígado">
+                        <g data-organ="figado" class="organ-group" role="button" tabindex="0" transform="translate(0 8)"
+                            aria-label="Fígado">
                             <title>Fígado — Metabolismo Hepático — clique para detalhes</title>
+                            <ellipse class="organ-hit" cx="217" cy="209" rx="64" ry="46" />
                             <!-- Lobo direito -->
                             <path class="organ-shape" fill="url(#grad-liver)" d="M210,196 C215,192 228,193 236,198
                                    C242,202 244,210 241,216
@@ -490,8 +523,10 @@
                         </g>
 
                         <!-- 5. Rins com córtex e pelve renal -->
-                        <g data-organ="rins" class="organ-group" role="button" tabindex="0" aria-label="Rins">
+                        <g data-organ="rins" class="organ-group" role="button" tabindex="0" transform="translate(0 8)"
+                            aria-label="Rins">
                             <title>Rins — Metabolismo Renal — clique para detalhes</title>
+                            <ellipse class="organ-hit" cx="200" cy="222" rx="70" ry="38" />
                             <!-- Rim esquerdo — córtex -->
                             <ellipse class="organ-shape" fill="url(#grad-kidney)" cx="163" cy="220" rx="10" ry="15" />
                             <!-- Pelve renal esq -->
@@ -511,9 +546,10 @@
                         </g>
 
                         <!-- 6. TGI — estômago com curvatura e duodeno -->
-                        <g data-organ="gastrointestinal" class="organ-group" role="button" tabindex="0"
+                        <g data-organ="gastrointestinal" class="organ-group" role="button" tabindex="0" transform="translate(0 8)"
                             aria-label="Trato Gastrointestinal">
                             <title>Trato Gastrointestinal — clique para detalhes</title>
+                            <ellipse class="organ-hit" cx="194" cy="229" rx="46" ry="32" />
                             <!-- Estômago -->
                             <path class="organ-shape" fill="url(#grad-gi)" d="M182,218 C178,216 176,220 177,226
                                    C178,233 183,237 190,237
@@ -529,9 +565,10 @@
                         </g>
 
                         <!-- 7. Hematológico — baço + representação hematológica -->
-                        <g data-organ="hematologico" class="organ-group" role="button" tabindex="0"
+                        <g data-organ="hematologico" class="organ-group" role="button" tabindex="0" transform="translate(0 8)"
                             aria-label="Sistema Hematológico">
                             <title>Sistema Hematológico — clique para detalhes</title>
+                            <ellipse class="organ-hit" cx="200" cy="278" rx="58" ry="34" />
                             <!-- Forma principal (medula/sistema) -->
                             <ellipse class="organ-shape" fill="url(#grad-hemato)" cx="200" cy="284" rx="35" ry="13" />
                             <!-- Baço -->
@@ -549,20 +586,20 @@
                         </g>
 
                         <!-- LABELS -->
-                        <circle class="sev-dot" id="dot-snc" r="4" cx="70" cy="52" />
-                        <text class="organ-lbl" id="lbl-snc" x="78" y="48" text-anchor="start">SNC</text>
-                        <circle class="sev-dot" id="dot-respiratorio" r="4" cx="70" cy="154" />
-                        <text class="organ-lbl" id="lbl-respiratorio" x="78" y="150" text-anchor="start">Pulmões</text>
-                        <circle class="sev-dot" id="dot-rins" r="4" cx="70" cy="220" />
-                        <text class="organ-lbl" id="lbl-rins" x="78" y="216" text-anchor="start">Rins</text>
-                        <circle class="sev-dot" id="dot-hematologico" r="4" cx="70" cy="285" />
-                        <text class="organ-lbl" id="lbl-hematologico" x="78" y="281" text-anchor="start">Hemato.</text>
-                        <circle class="sev-dot" id="dot-cardiovascular" r="4" cx="330" cy="167" />
-                        <text class="organ-lbl" id="lbl-cardiovascular" x="322" y="163" text-anchor="end">Coração</text>
-                        <circle class="sev-dot" id="dot-figado" r="4" cx="330" cy="210" />
-                        <text class="organ-lbl" id="lbl-figado" x="322" y="206" text-anchor="end">Fígado</text>
-                        <circle class="sev-dot" id="dot-gastrointestinal" r="4" cx="330" cy="229" />
-                        <text class="organ-lbl" id="lbl-gastrointestinal" x="322" y="225" text-anchor="end">TGI</text>
+                        <circle class="sev-dot" id="dot-snc" r="4" cx="28" cy="48" />
+                        <text class="organ-lbl" id="lbl-snc" x="36" y="44" text-anchor="start">SNC</text>
+                        <circle class="sev-dot" id="dot-respiratorio" r="4" cx="28" cy="162" />
+                        <text class="organ-lbl" id="lbl-respiratorio" x="36" y="158" text-anchor="start">Pulmões</text>
+                        <circle class="sev-dot" id="dot-rins" r="4" cx="28" cy="228" />
+                        <text class="organ-lbl" id="lbl-rins" x="36" y="224" text-anchor="start">Rins</text>
+                        <circle class="sev-dot" id="dot-hematologico" r="4" cx="28" cy="293" />
+                        <text class="organ-lbl" id="lbl-hematologico" x="36" y="289" text-anchor="start">Hemato.</text>
+                        <circle class="sev-dot" id="dot-cardiovascular" r="4" cx="372" cy="175" />
+                        <text class="organ-lbl" id="lbl-cardiovascular" x="364" y="171" text-anchor="end">Coração</text>
+                        <circle class="sev-dot" id="dot-figado" r="4" cx="372" cy="218" />
+                        <text class="organ-lbl" id="lbl-figado" x="364" y="214" text-anchor="end">Fígado</text>
+                        <circle class="sev-dot" id="dot-gastrointestinal" r="4" cx="372" cy="237" />
+                        <text class="organ-lbl" id="lbl-gastrointestinal" x="364" y="233" text-anchor="end">TGI</text>
                     </svg>
                 </div>
 
