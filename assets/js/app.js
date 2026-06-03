@@ -2,6 +2,8 @@ const APP_DATA_URL = './data/app-data.json';
 
 let INTERACTIONS_DB = [];
 let DRUG_CATALOG = [];
+let INTERACTION_INDEX = new Map();
+let DRUG_BY_NAME = new Map();
 
 async function loadAppData() {
     const response = await fetch(APP_DATA_URL, { cache: 'no-store' });
@@ -77,16 +79,32 @@ const ORGANS = [
         // ════════════════════════════════════════════════
         //  UTILITÁRIOS
         // ════════════════════════════════════════════════
+        function canonicalPairKey(drugA, drugB) {
+            return [drugA, drugB]
+                .map(name => name.trim().toLowerCase())
+                .sort()
+                .join('||');
+        }
+
+        function rebuildDataIndexes() {
+            INTERACTION_INDEX = new Map(
+                INTERACTIONS_DB.map(interaction => [
+                    canonicalPairKey(interaction.drug_a, interaction.drug_b),
+                    interaction,
+                ])
+            );
+
+            DRUG_BY_NAME = new Map(
+                DRUG_CATALOG.map(drug => [drug.name.toLowerCase(), drug])
+            );
+        }
+
         function computeInteractions() {
             const found = [];
             const drugs = state.drugs;
             for (let i = 0; i < drugs.length; i++) {
                 for (let j = i + 1; j < drugs.length; j++) {
-                    const a = drugs[i].toLowerCase(), b = drugs[j].toLowerCase();
-                    const match = INTERACTIONS_DB.find(x =>
-                        (x.drug_a.toLowerCase() === a && x.drug_b.toLowerCase() === b) ||
-                        (x.drug_a.toLowerCase() === b && x.drug_b.toLowerCase() === a)
-                    );
+                    const match = INTERACTION_INDEX.get(canonicalPairKey(drugs[i], drugs[j]));
                     if (match) found.push({ ...match, drug_a: drugs[i], drug_b: drugs[j] });
                 }
             }
@@ -477,7 +495,7 @@ const ORGANS = [
 
         function showNodeTip(event, d) {
             const s = SEV[d.severity];
-            const info = DRUG_CATALOG.find(x => x.name === d.id) || {};
+            const info = DRUG_BY_NAME.get(d.id.toLowerCase()) || {};
             const count = G.links.filter(l => (l.source.id || l.source) === d.id || (l.target.id || l.target) === d.id).length;
             tipEl.innerHTML = `
     <strong style="color:${s.textColor}">${d.id}</strong>
@@ -761,7 +779,7 @@ const ORGANS = [
                 const val = input.value.trim();
                 if (acActiveIndex >= 0 && acItems[acActiveIndex]) { addDrug(acItems[acActiveIndex].name); }
                 else if (val) {
-                    const match = DRUG_CATALOG.find(d => d.name.toLowerCase() === val.toLowerCase());
+                    const match = DRUG_BY_NAME.get(val.toLowerCase());
                     addDrug(match ? match.name : val);
                 }
             } else { addDrug(name); }
@@ -836,6 +854,7 @@ const ORGANS = [
                 const data = await loadAppData();
                 INTERACTIONS_DB = data.interactions;
                 DRUG_CATALOG = data.drugCatalog;
+                rebuildDataIndexes();
             } catch (error) {
                 console.error(error);
                 renderDataLoadError();
