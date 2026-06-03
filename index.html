@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SISAPEC — Interações Medicamentosas</title>
+    <title>PET-TECHSUS — Interações Medicamentosas</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link
         href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap"
@@ -21,23 +21,15 @@
 ═══════════════════════════════════ -->
     <header role="banner">
         <div class="logo">
-            <div class="logo-mark" aria-hidden="true">
-                <svg viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round">
-                    <circle cx="10" cy="10" r="3" />
-                    <line x1="10" y1="3" x2="10" y2="7" />
-                    <line x1="10" y1="13" x2="10" y2="17" />
-                    <line x1="3" y1="10" x2="7" y2="10" />
-                    <line x1="13" y1="10" x2="17" y2="10" />
-                    <line x1="5" y1="5" x2="7.8" y2="7.8" />
-                    <line x1="12.2" y1="12.2" x2="15" y2="15" />
-                </svg>
+            <div class="logo-mark">
+                <img src="./assets/img/logo-unifal-mg-symbol.png" alt="UNIFAL-MG">
             </div>
             <div class="logo-text">
-                <strong>SISAPEC</strong>
+                <strong>PET-TECHSUS</strong>
                 <span>Visualizador de Interações Medicamentosas</span>
             </div>
         </div>
-        <span class="header-badge">PET-TechSus · MVP</span>
+        <span class="header-badge">UNIFAL-MG · MVP</span>
     </header>
 
     <!-- ═══════════════════════════════════
@@ -80,13 +72,6 @@
                         · <span class="inter-badge" id="interaction-badge">0 interações</span>
                     </span>
                 </div>
-                <button class="analyze-btn" id="analyze-btn" disabled aria-label="Analisar interações">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="1,12 5,7 8,9.5 13,2" />
-                    </svg>
-                    Analisar
-                </button>
             </div>
             <div id="sr-live" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
         </section>
@@ -493,9 +478,6 @@
                             <!-- Reflexo de luz superior -->
                             <path fill="none" stroke="rgba(255,180,180,0.22)" stroke-width="2" stroke-linecap="round"
                                 pointer-events="none" d="M190,142 C193,139 198,138 201,140" />
-                            <!-- Aorta -->
-                            <path fill="none" stroke="#CC4444" stroke-width="2.5" stroke-linecap="round"
-                                pointer-events="none" d="M203,137 C203,130 208,126 213,128 C218,130 220,136 217,139" />
                         </g>
 
                         <!-- 4. Fígado anatômico com lobos e vesícula -->
@@ -609,6 +591,12 @@
         </div>
 
     </main>
+
+    <footer class="site-attribution" aria-label="Créditos dos dados">
+        <small>Dados: API Detecta Interações (IMSES/CRF-MG), <a
+                href="https://creativecommons.org/licenses/by-nc/4.0/deed.pt_BR" target="_blank" rel="noopener">CC
+                BY-NC 4.0</a></small>
+    </footer>
 
     <!-- OVERLAY + PANEL -->
     <div class="panel-overlay" id="panel-overlay" role="presentation"></div>

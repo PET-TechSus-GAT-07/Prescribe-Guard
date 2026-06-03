@@ -75,22 +75,27 @@
         .logo {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
 
         .logo-mark {
-            width: 36px;
-            height: 36px;
-            background: linear-gradient(135deg, #0EA5E9 0%, #0369A1 100%);
-            border-radius: 10px;
+            width: 34px;
+            height: 34px;
+            background: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%);
+            border: 1px solid rgba(14, 165, 233, .18);
+            border-radius: 7px;
+            padding: 4px;
             display: grid;
             place-items: center;
             flex-shrink: 0;
+            overflow: hidden;
         }
 
-        .logo-mark svg {
-            width: 20px;
-            height: 20px;
+        .logo-mark img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
         }
 
         .logo-text {
@@ -367,37 +372,6 @@
             padding: 2px 9px;
             font-size: .75rem;
             font-weight: 600;
-        }
-
-        .analyze-btn {
-            height: 38px;
-            padding: 0 20px;
-            background: linear-gradient(135deg, #0F172A 0%, #1E3A5F 100%);
-            color: #fff;
-            border: none;
-            border-radius: var(--radius-sm);
-            font-family: 'IBM Plex Sans', sans-serif;
-            font-size: .85rem;
-            font-weight: 600;
-            cursor: pointer;
-            letter-spacing: .02em;
-            transition: opacity .15s, transform .1s;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .analyze-btn:disabled {
-            opacity: .4;
-            cursor: not-allowed;
-        }
-
-        .analyze-btn:not(:disabled):hover {
-            opacity: .88;
-        }
-
-        .analyze-btn:not(:disabled):active {
-            transform: scale(.97);
         }
 
         /* ═══════════════════════════════════════════
@@ -1251,6 +1225,31 @@
             font-size: .73rem;
         }
 
+        .site-attribution {
+            max-width: 1400px;
+            margin: -12px auto 20px;
+            padding: 0 28px;
+            color: var(--text-muted);
+            font-size: .66rem;
+            line-height: 1.35;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .site-attribution a {
+            color: var(--text-muted);
+            text-decoration: none;
+            border-bottom: 1px solid rgba(148, 163, 184, .30);
+        }
+
+        .site-attribution a:hover {
+            color: var(--accent-dark);
+            border-bottom-color: rgba(3, 105, 161, .45);
+        }
+
         /* ═══════════════════════════════════════════
        MISC
     ═══════════════════════════════════════════ */
@@ -1285,8 +1284,59 @@
         }
 
         @media(max-width:640px) {
+            header {
+                padding: 0 14px;
+                gap: 12px;
+            }
+
+            .logo {
+                min-width: 0;
+            }
+
+            .logo-mark {
+                width: 32px;
+                height: 32px;
+                padding: 4px;
+            }
+
+            .logo-text {
+                min-width: 0;
+            }
+
+            .logo-text span {
+                max-width: 50vw;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .header-badge {
+                display: none;
+            }
+
             main {
                 padding: 16px;
+            }
+
+            .site-attribution {
+                padding: 0 16px;
+                justify-content: flex-start;
+                gap: 4px 10px;
+            }
+
+            .card-header {
+                align-items: flex-start;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .graph-controls {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+
+            .ctrl-btn {
+                flex: 0 0 auto;
             }
 
             .search-row {
