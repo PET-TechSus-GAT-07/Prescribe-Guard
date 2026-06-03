@@ -2,7 +2,7 @@
 
 ## Visão geral
 
-O pipeline de dados é executado localmente. Ele consulta a origem externa, grava um snapshot em SQLite e exporta o arquivo JSON usado pelo frontend.
+O pipeline de dados é executado localmente. Ele consulta a origem externa, grava um snapshot em SQLite e publica um banco SQLite estático usado pelo frontend via WebAssembly.
 
 ## Entrada
 
@@ -13,6 +13,7 @@ Origem atual:
 Configuração:
 
 - variável de ambiente `DETECTA_API_KEY`; ou
+- arquivo `.env.local` ou `.env`; ou
 - arquivo local `config/api.local.json`
 
 O arquivo de configuração local não deve ser versionado.
@@ -20,7 +21,7 @@ O arquivo de configuração local não deve ser versionado.
 ## Saídas
 
 - `storage/prescribe_guard.sqlite`
-- `data/app-data.json`
+- `data/prescribe_guard.sqlite`
 
 ## Etapas do pipeline
 
@@ -32,7 +33,10 @@ O arquivo de configuração local não deve ser versionado.
 6. Inferir severidade a partir do campo `acao` e do texto clínico.
 7. Inferir efeitos e sistemas afetados por heurísticas textuais.
 8. Gravar tudo no SQLite.
-9. Exportar um snapshot enxuto em JSON para o frontend.
+9. Criar índices úteis para consulta no navegador.
+10. Publicar `data/prescribe_guard.sqlite` com `VACUUM INTO`.
+
+O banco público não contém chave de API. Ele contém apenas o snapshot normalizado e metadados não sensíveis, como contagem de registros e data da última sincronização.
 
 ## Campos de origem e campos derivados
 
@@ -51,6 +55,18 @@ Campos derivados localmente:
 - `systems_affected`.
 
 Os campos derivados existem para atender necessidades da interface e não devem ser interpretados como campos nativos do serviço de origem.
+
+## Schema consultado pelo frontend
+
+O frontend consulta diretamente as tabelas `medications`, `interactions` e `metadata`.
+
+Consultas principais:
+
+- catálogo de medicamentos: `SELECT name, COALESCE(NULLIF(drug_class, ''), 'Medicamento') AS class FROM medications ORDER BY name COLLATE NOCASE`;
+- localização exata por nome: `SELECT name, COALESCE(NULLIF(drug_class, ''), 'Medicamento') AS class FROM medications WHERE name = ? COLLATE NOCASE LIMIT 1`;
+- interações entre pares selecionados: `SELECT ... FROM interactions WHERE pair_key IN (?, ...)`.
+
+Os campos `effects_json` e `systems_json` continuam armazenados como JSON dentro do SQLite porque representam listas derivadas e são lidos pelo Worker antes de chegar à interface.
 
 ## Deduplicação
 
@@ -95,6 +111,6 @@ python3 scripts/build_data.py
 Fluxo recomendado:
 
 1. Atualizar o snapshot local.
-2. Revisar mudanças em `data/app-data.json`.
+2. Revisar mudanças em `data/prescribe_guard.sqlite`.
 3. Validar visualmente a aplicação.
 4. Versionar apenas o que deve ser público.

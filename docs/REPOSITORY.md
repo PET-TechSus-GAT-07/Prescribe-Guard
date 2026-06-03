@@ -10,10 +10,12 @@
 
 - `assets/css/styles.css`: folha de estilos principal.
 - `assets/js/app.js`: script principal do frontend.
+- `assets/js/sqlite-data-worker.js`: camada de acesso a dados via SQLite WASM.
+- `assets/vendor/sqlite-wasm/`: artefatos oficiais `sqlite3.js` e `sqlite3.wasm`.
 
 ## Dados públicos
 
-- `data/app-data.json`: snapshot exportado para consumo no navegador.
+- `data/prescribe_guard.sqlite`: snapshot SQLite publicado para consumo no navegador.
 
 ## Configuração local
 

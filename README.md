@@ -4,7 +4,7 @@ Plataforma de consulta técnica baseada em evidências para o mapeamento de inte
 
 ## Visão geral
 
-O projeto foi estruturado para publicação em GitHub Pages, sem dependência de backend em produção. A aplicação publicada consome apenas arquivos estáticos versionados no repositório. A atualização dos dados acontece fora do navegador, com geração controlada de um snapshot local em SQLite e exportação para JSON.
+O projeto foi estruturado para publicação em GitHub Pages, sem dependência de backend em produção. A aplicação publicada consome apenas arquivos estáticos versionados no repositório. A atualização dos dados acontece fora do navegador, com geração controlada de um snapshot local em SQLite e publicação de um banco SQLite estático consultado no browser via WebAssembly.
 
 ## Documentação
 
@@ -18,23 +18,26 @@ O projeto foi estruturado para publicação em GitHub Pages, sem dependência de
 - `index.html`: documento principal da aplicação.
 - `assets/css/styles.css`: estilos da interface.
 - `assets/js/app.js`: comportamento da interface.
-- `data/app-data.json`: base estática consumida pelo frontend.
+- `assets/js/sqlite-data-worker.js`: Worker que abre o SQLite no navegador.
+- `assets/vendor/sqlite-wasm/`: `sqlite3.js` e `sqlite3.wasm` oficiais.
+- `data/prescribe_guard.sqlite`: banco SQLite estático consumido pelo frontend.
 - `scripts/build_data.py`: atualização offline da base.
 - `storage/prescribe_guard.sqlite`: base local de curadoria e snapshot.
-- `config/api.local.json.example`: modelo de configuração local.
+- `config/api.local.json.example`: modelo alternativo de configuração local.
+- `.env.example`: modelo recomendado para variáveis locais.
 
 ## Atualização segura dos dados
 
 O site publicado no GitHub Pages **não consulta a API diretamente**. A atualização acontece fora do navegador:
 
-1. Defina a chave em `DETECTA_API_KEY` ou crie `config/api.local.json` a partir de `config/api.local.json.example`.
+1. Defina a chave em `DETECTA_API_KEY`, crie `.env.local` a partir de `.env.example` ou use `config/api.local.json`.
 2. Execute:
 
 ```bash
 python3 scripts/build_data.py
 ```
 
-Isso faz uma leitura controlada do endpoint `/medicamentos`, salva o snapshot em `storage/prescribe_guard.sqlite` e exporta `data/app-data.json`.
+Isso faz uma leitura controlada do endpoint `/medicamentos`, salva o snapshot em `storage/prescribe_guard.sqlite` e publica `data/prescribe_guard.sqlite` para o site estático.
 
 ## Origem dos campos
 
@@ -56,7 +59,7 @@ Os campos enriquecidos são derivados por regras locais documentadas no pipeline
 
 ## Desenvolvimento local
 
-Como o frontend usa `fetch` para ler o JSON local, rode um servidor estático simples em vez de abrir o HTML por `file://`:
+Como o frontend usa `fetch`, Worker e WebAssembly para abrir o SQLite local, rode um servidor estático simples em vez de abrir o HTML por `file://`:
 
 ```bash
 python3 -m http.server 8000

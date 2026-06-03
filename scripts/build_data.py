@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Atualiza a base SQLite local e exporta o JSON estático usado pelo site."""
+"""Atualiza a base SQLite local e publica o SQLite estático usado pelo site."""
 
 from __future__ import annotations
 
@@ -20,7 +20,8 @@ from typing import Any
 DEFAULT_BASE_URL = "https://imses.crfmg.org.br/api"
 DEFAULT_CONFIG_PATH = Path("config/api.local.json")
 DEFAULT_DB_PATH = Path("storage/prescribe_guard.sqlite")
-DEFAULT_OUTPUT_PATH = Path("data/app-data.json")
+DEFAULT_PUBLIC_DB_PATH = Path("data/prescribe_guard.sqlite")
+DEFAULT_DOTENV_PATHS = (Path(".env.local"), Path(".env"))
 
 DRUG_CLASS_OVERRIDES = {
     "AAS": "Antiagregante / AINE",
@@ -161,9 +162,9 @@ def parse_args() -> argparse.Namespace:
         help="Caminho do banco SQLite local.",
     )
     parser.add_argument(
-        "--output",
-        default=str(DEFAULT_OUTPUT_PATH),
-        help="Caminho do JSON exportado para o frontend.",
+        "--public-db",
+        default=str(DEFAULT_PUBLIC_DB_PATH),
+        help="Caminho do SQLite estático publicado para o frontend.",
     )
     return parser.parse_args()
 
@@ -172,17 +173,40 @@ def normalize_text(value: str | None) -> str:
     return re.sub(r"\s+", " ", (value or "")).strip()
 
 
+def load_dotenv(paths: tuple[Path, ...] = DEFAULT_DOTENV_PATHS) -> None:
+    for path in paths:
+        if not path.exists():
+            continue
+
+        for raw_line in path.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip("'").strip('"')
+            if key and key not in os.environ:
+                os.environ[key] = value
+
+
 def load_settings(config_path: Path) -> tuple[str, str]:
+    load_dotenv()
+
     settings: dict[str, Any] = {}
     if config_path.exists():
         settings = json.loads(config_path.read_text(encoding="utf-8"))
 
-    api_key = settings.get("apiKey") or os.getenv("DETECTA_API_KEY")
-    base_url = settings.get("baseUrl") or os.getenv("DETECTA_BASE_URL") or DEFAULT_BASE_URL
+    api_key = os.getenv("DETECTA_API_KEY") or settings.get("apiKey")
+    base_url = (
+        os.getenv("DETECTA_BASE_URL")
+        or settings.get("baseUrl")
+        or DEFAULT_BASE_URL
+    )
 
     if not api_key:
         raise SystemExit(
-            "Chave ausente. Defina DETECTA_API_KEY ou crie config/api.local.json."
+            "Chave ausente. Defina DETECTA_API_KEY, use .env.local/.env ou crie config/api.local.json."
         )
 
     return str(api_key), str(base_url).rstrip("/")
@@ -286,6 +310,12 @@ def init_db(connection: sqlite3.Connection) -> None:
             source TEXT NOT NULL DEFAULT 'detecta-api',
             updated_at TEXT NOT NULL
         );
+
+        CREATE INDEX IF NOT EXISTS idx_medications_name_nocase
+            ON medications(name COLLATE NOCASE);
+
+        CREATE INDEX IF NOT EXISTS idx_interactions_pair_key
+            ON interactions(pair_key);
         """
     )
 
@@ -453,84 +483,35 @@ def write_snapshot_to_db(
                 ("source_base_url", base_url),
                 ("medications_count", str(len(medications))),
                 ("interactions_count", str(len(interactions))),
+                ("public_schema_version", "1"),
             ],
         )
 
 
-def export_frontend_data(connection: sqlite3.Connection, output_path: Path) -> dict[str, Any]:
-    medication_rows = connection.execute(
-        """
-        SELECT name, drug_class
-        FROM medications
-        ORDER BY lower(name)
-        """
-    ).fetchall()
+def publish_frontend_database(connection: sqlite3.Connection, public_db_path: Path) -> None:
+    """Create a compact, self-contained SQLite artifact for static hosting."""
+    public_db_path.parent.mkdir(parents=True, exist_ok=True)
+    if public_db_path.exists():
+        public_db_path.unlink()
 
-    interaction_rows = connection.execute(
-        """
-        SELECT
-            drug_a_name,
-            drug_b_name,
-            severity,
-            action,
-            mechanism,
-            recommendation,
-            effects_json,
-            systems_json,
-            source_interaction_id
-        FROM interactions
-        ORDER BY
-            CASE severity
-                WHEN 'contraindicated' THEN 4
-                WHEN 'major' THEN 3
-                WHEN 'moderate' THEN 2
-                WHEN 'minor' THEN 1
-                ELSE 0
-            END DESC,
-            lower(drug_a_name),
-            lower(drug_b_name)
-        """
-    ).fetchall()
+    connection.execute("PRAGMA optimize")
+    connection.execute("VACUUM main INTO ?", (str(public_db_path),))
 
-    metadata_rows = connection.execute("SELECT key, value FROM metadata").fetchall()
-    metadata = {row[0]: row[1] for row in metadata_rows}
-
-    app_data = {
-        "generatedAt": metadata.get("last_synced_at"),
-        "source": "sqlite-offline-snapshot",
-        "drugCatalog": [
-            {"name": row[0], "class": row[1] or "Medicamento"}
-            for row in medication_rows
-        ],
-        "interactions": [
-            {
-                "drug_a": row[0],
-                "drug_b": row[1],
-                "severity": row[2],
-                "source_action": row[3],
-                "mechanism": row[4],
-                "recommendation": row[5],
-                "effects": json.loads(row[6]),
-                "systems_affected": json.loads(row[7]),
-                "source_id": row[8],
-            }
-            for row in interaction_rows
-        ],
-    }
-
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(
-        json.dumps(app_data, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
-    return app_data
+    public_connection = sqlite3.connect(public_db_path)
+    try:
+        with public_connection:
+            public_connection.execute(
+                "DELETE FROM metadata WHERE key = 'source_base_url'"
+            )
+    finally:
+        public_connection.close()
 
 
 def main() -> int:
     args = parse_args()
     config_path = Path(args.config)
     db_path = Path(args.db)
-    output_path = Path(args.output)
+    public_db_path = Path(args.public_db)
 
     api_key, base_url = load_settings(config_path)
     fetched_at = datetime.now(UTC).replace(microsecond=0).isoformat()
@@ -543,16 +524,16 @@ def main() -> int:
     try:
         init_db(connection)
         write_snapshot_to_db(connection, medications, interactions, fetched_at, base_url)
-        app_data = export_frontend_data(connection, output_path)
+        publish_frontend_database(connection, public_db_path)
     finally:
         connection.close()
 
     print(
-        f"Snapshot atualizado: {len(app_data['drugCatalog'])} medicamentos, "
-        f"{len(app_data['interactions'])} interações."
+        f"Snapshot atualizado: {len(medications)} medicamentos, "
+        f"{len(interactions)} interações."
     )
-    print(f"SQLite: {db_path}")
-    print(f"JSON: {output_path}")
+    print(f"SQLite local: {db_path}")
+    print(f"SQLite público: {public_db_path}")
     return 0
 
 
