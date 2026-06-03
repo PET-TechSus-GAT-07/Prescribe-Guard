@@ -576,29 +576,97 @@
         .body-map-content {
             display: grid;
             grid-template-columns: 1fr 240px;
-            min-height: 420px;
+            min-height: 460px;
         }
 
         .body-svg-wrap {
+            position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 24px 12px;
-            background: linear-gradient(160deg, #F8FAFC 0%, #EFF6FF 100%);
+            padding: 26px 14px;
+            background:
+                linear-gradient(90deg, rgba(148, 163, 184, .12) 1px, transparent 1px),
+                linear-gradient(0deg, rgba(148, 163, 184, .10) 1px, transparent 1px),
+                linear-gradient(160deg, #F8FAFC 0%, #EEF7FF 48%, #F8FAFC 100%);
+            background-size: 28px 28px, 28px 28px, auto;
             border-right: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .body-svg-wrap::before {
+            content: '';
+            position: absolute;
+            inset: 22px;
+            border: 1px solid rgba(14, 165, 233, .10);
+            border-radius: 18px;
+            pointer-events: none;
         }
 
         #body-svg {
+            position: relative;
             width: 100%;
             max-width: 480px;
-            max-height: 400px;
+            max-height: 430px;
             overflow: visible;
         }
 
+        .body-aura {
+            fill: none;
+            stroke: rgba(100, 116, 139, .18);
+            stroke-width: 8;
+            filter: url(#body-soft-glow);
+            opacity: .22;
+            animation: bodyAura 4s ease-in-out infinite;
+        }
+
         .body-silhouette {
-            fill: #EEF2F7;
-            stroke: #C8D4E3;
-            stroke-width: 1.5;
+            fill: url(#skin-grad);
+            stroke: url(#skin-stroke-grad);
+            stroke-width: 1.8;
+            filter: url(#body-shadow);
+            transition: filter .25s ease;
+        }
+
+        .body-window {
+            fill: url(#body-window-grad);
+            stroke: rgba(100, 116, 139, .14);
+            stroke-width: 1;
+        }
+
+        .body-axis {
+            fill: none;
+            stroke: url(#body-axis-grad);
+            stroke-width: 2.2;
+            stroke-linecap: round;
+        }
+
+        .body-rib {
+            fill: none;
+            stroke: rgba(14, 165, 233, .18);
+            stroke-width: 1;
+            stroke-linecap: round;
+        }
+
+        .body-scan-line {
+            fill: none;
+            stroke: rgba(14, 165, 233, .58);
+            stroke-width: 2;
+            stroke-linecap: round;
+            filter: drop-shadow(0 0 5px rgba(14, 165, 233, .36));
+            animation: bodyScan 3.6s ease-in-out infinite;
+        }
+
+        .body-anatomy {
+            pointer-events: none;
+        }
+
+        .organ-hit {
+            fill: transparent;
+            stroke: transparent;
+            stroke-width: 1.4;
+            transition: fill .22s ease, stroke .22s ease, opacity .22s ease;
+            pointer-events: all;
         }
 
         /* ── Updated organ-shape rule ── */
@@ -625,6 +693,12 @@
         }
 
         /* ── Updated hover rule ── */
+        .organ-group:hover .organ-hit,
+        .organ-group:focus-visible .organ-hit {
+            fill: rgba(14, 165, 233, .08);
+            stroke: rgba(14, 165, 233, .28);
+        }
+
         .organ-group:hover .organ-shape {
             stroke-width: 2;
             filter: brightness(1.18) saturate(1.2);
@@ -654,10 +728,20 @@
             transition: transform .35s cubic-bezier(.22, .68, 0, 1.2), filter .3s ease;
         }
 
+        .organ-group.organ-zoom-active .organ-hit {
+            fill: rgba(14, 165, 233, .12);
+            stroke: rgba(14, 165, 233, .38);
+        }
+
         /* ── Risk fill rules (override gradients intentionally) ── */
         .organ-group[data-risk="contraindicated"] .organ-shape:not(.organ-trachea) {
             fill: rgba(220, 38, 38, .82);
             stroke: #FF4444;
+        }
+
+        .organ-group[data-risk="contraindicated"] .organ-hit {
+            fill: rgba(220, 38, 38, .08);
+            stroke: rgba(220, 38, 38, .20);
         }
 
         .organ-group[data-risk="major"] .organ-shape:not(.organ-trachea) {
@@ -665,14 +749,59 @@
             stroke: #FF7733;
         }
 
+        .organ-group[data-risk="major"] .organ-hit {
+            fill: rgba(234, 88, 12, .08);
+            stroke: rgba(234, 88, 12, .20);
+        }
+
         .organ-group[data-risk="moderate"] .organ-shape:not(.organ-trachea) {
             fill: rgba(217, 119, 6, .72);
             stroke: #FFAA33;
         }
 
+        .organ-group[data-risk="moderate"] .organ-hit {
+            fill: rgba(217, 119, 6, .07);
+            stroke: rgba(217, 119, 6, .18);
+        }
+
         .organ-group[data-risk="minor"] .organ-shape:not(.organ-trachea) {
             fill: rgba(101, 163, 13, .68);
             stroke: #88CC22;
+        }
+
+        .organ-group[data-risk="minor"] .organ-hit {
+            fill: rgba(101, 163, 13, .07);
+            stroke: rgba(101, 163, 13, .18);
+        }
+
+        @keyframes bodyAura {
+
+            0%,
+            100% {
+                opacity: .58;
+            }
+
+            50% {
+                opacity: .9;
+            }
+        }
+
+        @keyframes bodyScan {
+
+            0%,
+            100% {
+                opacity: .15;
+                transform: translateY(-42px);
+            }
+
+            45% {
+                opacity: .9;
+            }
+
+            70% {
+                opacity: .28;
+                transform: translateY(52px);
+            }
         }
 
         @keyframes pulse-contra {
@@ -1173,4 +1302,3 @@
                 --panel-width: 100vw;
             }
         }
-    
