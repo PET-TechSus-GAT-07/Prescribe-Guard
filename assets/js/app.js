@@ -261,7 +261,6 @@ const ORGANS = [
             } else {
                 interSection.style.display = 'none';
             }
-            document.getElementById('analyze-btn').disabled = count < 2;
         }
 
         // ════════════════════════════════════════════════
@@ -328,29 +327,51 @@ const ORGANS = [
         function startSimulation() {
             if (G.simulation) G.simulation.stop();
             const { w, h } = getContainerSize();
+            const viewportScale = Math.min(w, h);
 
             const allLinksForSim = [
                 ...G.links,
                 ...G.safeLinks.map(l => ({ ...l, severity: 'safe', _isSafe: true }))
             ];
+            const linkDistances = {
+                contraindicated: Math.max(140, viewportScale * 0.22),
+                major: Math.max(160, viewportScale * 0.25),
+                moderate: Math.max(180, viewportScale * 0.28),
+                minor: Math.max(205, viewportScale * 0.32),
+            };
+            const linkStrengths = {
+                contraindicated: .34,
+                major: .28,
+                moderate: .22,
+                minor: .16,
+            };
+            const chargeStrengths = {
+                contraindicated: -520,
+                major: -460,
+                moderate: -420,
+                minor: -380,
+                safe: -340,
+            };
 
             G.simulation = d3.forceSimulation(G.nodes)
                 .force('link',
                     d3.forceLink(allLinksForSim)
                         .id(d => d.id)
-                        .distance(d => d._isSafe ? 70 : ({ contraindicated: 50, major: 65, moderate: 80, minor: 95 }[d.severity] || 75))
-                        .strength(d => d._isSafe ? 0.06 : ({ contraindicated: .9, major: .7, moderate: .5, minor: .3 }[d.severity] || .4))
+                        .distance(d => d._isSafe ? Math.max(230, viewportScale * 0.36) : (linkDistances[d.severity] || 180))
+                        .strength(d => d._isSafe ? 0.012 : (linkStrengths[d.severity] || .18))
                 )
                 .force('charge',
                     d3.forceManyBody()
-                        .strength(d => ({ contraindicated: -200, major: -160, moderate: -130, minor: -110, safe: -100 }[d.severity] || -130))
-                        .distanceMin(12)
-                        .distanceMax(280)
+                        .strength(d => chargeStrengths[d.severity] || -400)
+                        .distanceMin(36)
+                        .distanceMax(Math.max(420, Math.max(w, h) * 0.72))
                 )
-                .force('center', d3.forceCenter(w / 2, h / 2).strength(0.08))
-                .force('collide', d3.forceCollide().radius(22).strength(.8))
-                .alphaDecay(0.018)
-                .velocityDecay(0.38)
+                .force('center', d3.forceCenter(w / 2, h / 2).strength(0.035))
+                .force('x', d3.forceX(w / 2).strength(0.018))
+                .force('y', d3.forceY(h / 2).strength(0.018))
+                .force('collide', d3.forceCollide().radius(d => Math.max(42, Math.min(88, d.id.length * 3.4))).strength(.92))
+                .alphaDecay(0.016)
+                .velocityDecay(0.34)
                 .on('tick', tickGraph);
         }
 
@@ -801,7 +822,6 @@ const ORGANS = [
         // ════════════════════════════════════════════════
         const input = document.getElementById('drug-input');
         const addButton = document.getElementById('add-btn');
-        const analyzeButton = document.getElementById('analyze-btn');
         const listbox = document.getElementById('autocomplete-listbox');
         let acActiveIndex = -1;
         let acItems = [];
@@ -809,7 +829,6 @@ const ORGANS = [
         function setControlsDisabled(disabled) {
             input.disabled = disabled;
             addButton.disabled = disabled;
-            analyzeButton.disabled = disabled || state.drugs.length < 2;
         }
 
         function renderDataLoadError(error) {
@@ -928,17 +947,13 @@ const ORGANS = [
             }
         });
 
-        analyzeButton.addEventListener('click', () => {
-            if (state.drugs.length >= 2) {
-                runLayout(state.currentLayout);
-            }
-        });
-
         window.addEventListener('resize', () => {
             if (!G.simulation || !state.drugs.length) return;
             const { w, h } = getContainerSize();
             d3.select('#graph-svg').attr('viewBox', `0 0 ${w} ${h}`);
-            G.simulation.force('center', d3.forceCenter(w / 2, h / 2).strength(.05));
+            G.simulation.force('center', d3.forceCenter(w / 2, h / 2).strength(.035));
+            G.simulation.force('x', d3.forceX(w / 2).strength(0.018));
+            G.simulation.force('y', d3.forceY(h / 2).strength(0.018));
             G.simulation.alpha(.2).restart();
         });
 
