@@ -334,42 +334,42 @@ const ORGANS = [
                 ...G.safeLinks.map(l => ({ ...l, severity: 'safe', _isSafe: true }))
             ];
             const linkDistances = {
-                contraindicated: Math.max(140, viewportScale * 0.22),
-                major: Math.max(160, viewportScale * 0.25),
-                moderate: Math.max(180, viewportScale * 0.28),
-                minor: Math.max(205, viewportScale * 0.32),
+                contraindicated: Math.max(95, viewportScale * 0.15),
+                major: Math.max(110, viewportScale * 0.17),
+                moderate: Math.max(125, viewportScale * 0.19),
+                minor: Math.max(140, viewportScale * 0.21),
             };
             const linkStrengths = {
-                contraindicated: .34,
-                major: .28,
-                moderate: .22,
-                minor: .16,
+                contraindicated: .42,
+                major: .36,
+                moderate: .30,
+                minor: .24,
             };
             const chargeStrengths = {
-                contraindicated: -520,
-                major: -460,
-                moderate: -420,
-                minor: -380,
-                safe: -340,
+                contraindicated: -320,
+                major: -285,
+                moderate: -260,
+                minor: -235,
+                safe: -210,
             };
 
             G.simulation = d3.forceSimulation(G.nodes)
                 .force('link',
                     d3.forceLink(allLinksForSim)
                         .id(d => d.id)
-                        .distance(d => d._isSafe ? Math.max(230, viewportScale * 0.36) : (linkDistances[d.severity] || 180))
+                        .distance(d => d._isSafe ? Math.max(155, viewportScale * 0.24) : (linkDistances[d.severity] || 125))
                         .strength(d => d._isSafe ? 0.012 : (linkStrengths[d.severity] || .18))
                 )
                 .force('charge',
                     d3.forceManyBody()
-                        .strength(d => chargeStrengths[d.severity] || -400)
-                        .distanceMin(36)
-                        .distanceMax(Math.max(420, Math.max(w, h) * 0.72))
+                        .strength(d => chargeStrengths[d.severity] || -260)
+                        .distanceMin(24)
+                        .distanceMax(Math.max(320, Math.max(w, h) * 0.55))
                 )
-                .force('center', d3.forceCenter(w / 2, h / 2).strength(0.035))
-                .force('x', d3.forceX(w / 2).strength(0.018))
-                .force('y', d3.forceY(h / 2).strength(0.018))
-                .force('collide', d3.forceCollide().radius(d => Math.max(42, Math.min(88, d.id.length * 3.4))).strength(.92))
+                .force('center', d3.forceCenter(w / 2, h / 2).strength(0.05))
+                .force('x', d3.forceX(w / 2).strength(0.025))
+                .force('y', d3.forceY(h / 2).strength(0.025))
+                .force('collide', d3.forceCollide().radius(d => Math.max(30, Math.min(62, d.id.length * 2.7))).strength(.88))
                 .alphaDecay(0.016)
                 .velocityDecay(0.34)
                 .on('tick', tickGraph);
