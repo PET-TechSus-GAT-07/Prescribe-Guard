@@ -786,7 +786,7 @@ const ORGANS = [
                 <span>${inter.drug_a} × ${inter.drug_b}</span>
                 <span class="severity-badge ${inter.severity}" style="font-size:.68rem;padding:2px 8px;">${SEVERITY_LABELS[inter.severity]}</span>
               </div>
-              <div class="organ-interaction-desc">${inter.mechanism.substring(0, 160)}${inter.mechanism.length > 160 ? '...' : ''}</div>
+              <div class="organ-interaction-desc">${inter.mechanism}</div>
             </div>`).join('')}
         </div>
       </div>`;
