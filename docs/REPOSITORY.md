@@ -24,7 +24,10 @@
 
 ## Pipeline de atualização
 
-- `scripts/build_data.py`: coleta, normalização, persistência e exportação de dados.
+- `scripts/build_data.py`: coleta, normalização, persistência e exportação de dados da API remota (replace total).
+- `scripts/import_rename.py`: importação aditiva do dataset RENAME (planilha local, não versionada).
+- `scripts/data_pipeline_common.py`: lógica compartilhada entre os dois scripts acima (normalização, heurísticas de severidade/efeitos/sistemas, schema, publicação do SQLite).
+- `scripts/rename_synonyms.json`: tabela de sinônimos de nomes usada pelo import do RENAME.
 
 ## Dados locais
 
@@ -36,3 +39,5 @@
 - `docs/DATA_PIPELINE.md`
 - `docs/OPERATIONS.md`
 - `docs/REPOSITORY.md`
+- `docs/RENAME_NAMING_AUDIT.md`: auditoria das mesclas de nome de medicamento feitas durante o import do RENAME.
+- `docs/RENAME_INTERACTION_MERGE_AUDIT.md`: auditoria par a par das interações que existiam nas duas fontes e tiveram texto/severidade reconciliados.
