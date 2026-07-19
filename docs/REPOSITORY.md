@@ -39,3 +39,5 @@
 - `docs/DATA_PIPELINE.md`
 - `docs/OPERATIONS.md`
 - `docs/REPOSITORY.md`
+- `docs/RENAME_NAMING_AUDIT.md`: auditoria das mesclas de nome de medicamento feitas durante o import do RENAME.
+- `docs/RENAME_INTERACTION_MERGE_AUDIT.md`: auditoria par a par das interações que existiam nas duas fontes e tiveram texto/severidade reconciliados.
