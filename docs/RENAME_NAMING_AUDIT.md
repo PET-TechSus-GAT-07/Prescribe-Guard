@@ -4,6 +4,8 @@ Documento objetivo com todas as inconsistências de nome de medicamento encontra
 
 **Status**: seções A, B e C aplicadas em `scripts/rename_synonyms.json` (revisadas e confirmadas). Seção D (Ceftriazona) segue deliberadamente **não aplicada** por falta de confirmação documentada — ver critério na própria seção.
 
+**Fontes consultadas** para verificar cada item da seção C: Bulário Eletrônico da ANVISA (consultas.anvisa.gov.br), Wikipédia em português para os fármacos citados, e sites de referência farmacêutica brasileira (ex. InfoSUS/SC, MDSaúde, guias de hospitais). Nenhuma classificação de "confirmado" foi feita sem uma fonte específica encontrada para aquele item — onde não achei fonte, o documento diz isso explicitamente em vez de presumir.
+
 ## A. Já mesclado — sinônimo de sal/éster documentado (aplicado em `scripts/rename_synonyms.json`)
 
 Mesma substância ativa, a única diferença é a forma de sal/éster especificada (não muda a substância nem o perfil de interação).
@@ -46,26 +48,30 @@ Mesmo padrão da seção A (mesma substância, só sal/éster diferente), encont
 | Tartarato de metoprolol | Metoprolol | mesclar (tartarato = liberação imediata, mesmo fármaco) |
 | Succinato sódico de hidrocortisona | Hidrocortisona | mesclar |
 
-## C. Mesclado — correção de erro de digitação (fonte: planilha RENAME ou catálogo original)
+## C. Mesclado — grafia divergente da mesma substância (fonte: planilha RENAME ou catálogo original)
 
-Aqui a diferença não é de nomenclatura farmacológica, é erro de digitação. Confiança alta porque são nomes de fármacos muito conhecidos e a diferença é de 1-2 caracteres, sem ambiguidade com outro fármaco real.
+**Correção registrada nesta revisão**: a primeira versão deste documento classificava todos os itens abaixo genericamente como "erro de digitação". Isso estava impreciso — pelo menos um caso (Fursemida/Furosemida) é documentado como simplificação coloquial/regional, não erro de digitação, e não pesquisei essa distinção item a item na primeira passada. Nesta revisão, cada item foi pesquisado individualmente. A coluna "Evidência" mostra exatamente o que foi encontrado e com que confiança — sem generalizar.
 
-| Grafia com erro | Nome correto (já existe no catálogo) | Onde está o erro |
-|---|---|---|
-| Cabamazepina | Carbamazepina | planilha RENAME |
-| Clatitromicina | Claritromicina | planilha RENAME |
-| Clatritromicina | Claritromicina | planilha RENAME |
-| Digoxicina | Digoxina | planilha RENAME |
-| Fursemida | Furosemida | planilha RENAME |
-| Hidraclorotiazida | Hidroclorotiazida | planilha RENAME |
-| Dexametaxona | Dexametasona | planilha RENAME |
-| Cloridrato de propanolol | Propranolol | planilha RENAME |
-| Cloridrato de propanol | Propranolol | planilha RENAME |
-| Cloridrato de clorprimazina | Clorpromazina | planilha RENAME |
-| Cloridrato de amitrptilina | Amitriptilina | planilha RENAME |
-| Cloridrato d lidocaína | Lidocaina | planilha RENAME |
-| Diazepam. (com ponto sobrando) | Diazepam | planilha RENAME |
-| Monoitrato de isossorbida | — | **catálogo original (API)**: o nome correto é "Mononitrato de isossorbida" (falta um "n"). A planilha RENAME tem a grafia correta, foi o catálogo já existente que trouxe o erro. Mesclado mantendo o nome de exibição do catálogo original (com o erro) — corrigir a grafia exibida é uma limpeza cosmética separada, fora do escopo deste import. |
+O que **não muda** entre os itens: a identidade da substância ativa é de alta confiança em todos os casos (são nomes de fármacos muito bem estabelecidos, com 1-3 caracteres de diferença, sem nenhum outro fármaco real correspondendo à grafia divergente). O que varia é *por que* a grafia diverge — e isso está documentado caso a caso abaixo, não presumido.
+
+| Grafia divergente | Nome correto (já existe no catálogo) | Onde está a grafia divergente | Evidência |
+|---|---|---|---|
+| Fursemida | Furosemida | planilha RENAME | **Confirmado**: simplificação coloquial/regional documentada (elisão da vogal átona "o"), mesma substância. |
+| Hidraclorotiazida | Hidroclorotiazida | planilha RENAME | **Confirmado como mesma substância**: fontes descrevem "hidraclorotiazida" como variação ortográfica menos comum do mesmo fármaco. Não encontrei fonte que classifique especificamente como erro de digitação vs. variação regional. |
+| Dexametaxona | Dexametasona | planilha RENAME | Mesma substância, sem dúvida. Evidência fraca de que a troca s/x é um padrão de fala popular já documentado para outros pares de palavras em português — não achei confirmação específica para este par. |
+| Clatitromicina | Claritromicina | planilha RENAME | Mesma substância, sem dúvida (é o único macrolídeo com esse padrão de nome). Não encontrei essa grafia documentada em nenhuma fonte oficial ou farmácia — sem confirmação de ser erro de digitação ou variação informal. |
+| Clatritromicina | Claritromicina | planilha RENAME | Mesmo caso do item acima. |
+| Digoxicina | Digoxina | planilha RENAME | Mesma substância, sem dúvida. Fontes de saúde tratam "digoxicina" como "variação ou erro de escrita" sem definir qual dos dois. |
+| Cabamazepina | Carbamazepina | planilha RENAME | Mesma substância, sem dúvida (não existe outro fármaco com esse padrão de nome). Não encontrei nenhuma fonte documentando essa grafia. |
+| Cloridrato de propanolol | Propranolol | planilha RENAME | Mesma substância, sem dúvida. Não encontrei fonte específica classificando a omissão do "r" como erro de digitação ou simplificação de fala — mas segue o mesmo padrão fonético de elisão do caso confirmado da Fursemida. |
+| Cloridrato de propanol | Propranolol | planilha RENAME | Mesmo caso do item acima. |
+| Cloridrato de clorprimazina | Clorpromazina | planilha RENAME | Mesma substância, sem dúvida. Sem fonte específica sobre a origem da grafia. |
+| Cloridrato de amitrptilina | Amitriptilina | planilha RENAME | Mesma substância, sem dúvida (falta uma vogal "i" no meio da palavra). Sem fonte específica sobre a origem da grafia. |
+| Cloridrato d lidocaína | Lidocaina | planilha RENAME | Mesma substância, sem dúvida — aqui a divergência é a preposição "de" abreviada para "d", não o nome do fármaco em si. |
+| Diazepam. (com ponto sobrando) | Diazepam | planilha RENAME | Mesma substância, sem dúvida — divergência é só pontuação, não é questão de nomenclatura/fonética. |
+| Monoitrato de isossorbida | — | **catálogo original (API)**: falta a sílaba "no" (o nome correto é "Mononitrato de isossorbida"). A planilha RENAME tem a grafia correta; foi o catálogo já existente que trouxe essa divergência. Mesclado mantendo o nome de exibição do catálogo original (com a grafia divergente) — corrigir a grafia exibida é uma limpeza cosmética separada, fora do escopo deste import. | Mesma substância, sem dúvida — mononitrato e dinitrato de isossorbida são fármacos diferentes (isso já era considerado desde a primeira análise, por isso não foi confundido com "Dinitrato de isossorbida", que é uma entrada separada e correta no catálogo). |
+
+Em nenhum destes 14 itens a mescla decorre de presumir "são o mesmo fármaco porque parecem parecidos" — a identidade da substância foi verificada pelo nome (fármacos únicos, sem outro candidato real correspondendo à grafia). O que ficou mais bem fundamentado nesta revisão foi separar essa certeza farmacológica da certeza sobre *a origem* da grafia divergente, que é uma pergunta diferente e, para a maioria dos itens, permanece sem fonte documentada.
 
 ## D. Caso incerto — mantido separado por falta de confirmação documentada
 
