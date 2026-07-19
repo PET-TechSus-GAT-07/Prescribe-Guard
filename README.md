@@ -21,7 +21,8 @@ O projeto foi estruturado para publicação em GitHub Pages, sem dependência de
 - `assets/js/sqlite-data-worker.js`: Worker que abre o SQLite no navegador.
 - `assets/vendor/sqlite-wasm/`: `sqlite3.js` e `sqlite3.wasm` oficiais.
 - `data/prescribe_guard.sqlite`: banco SQLite estático consumido pelo frontend.
-- `scripts/build_data.py`: atualização offline da base.
+- `scripts/build_data.py`: atualização offline da base a partir da API remota.
+- `scripts/import_rename.py`: merge aditivo do dataset RENAME (planilha local).
 - `storage/prescribe_guard.sqlite`: base local de curadoria e snapshot.
 - `config/api.local.json.example`: modelo alternativo de configuração local.
 - `.env.example`: modelo recomendado para variáveis locais.
@@ -38,6 +39,14 @@ python3 scripts/build_data.py
 ```
 
 Isso faz uma leitura controlada do endpoint `/medicamentos`, salva o snapshot em `storage/prescribe_guard.sqlite` e publica `data/prescribe_guard.sqlite` para o site estático.
+
+Para ampliar a base com o dataset RENAME (planilha local, não versionada), rode **depois** do comando acima:
+
+```bash
+python3 scripts/import_rename.py --xlsx ../RENAME.xlsx
+```
+
+Esse script requer a dependência local `openpyxl` (`pip install openpyxl`), usada só na ferramenta de importação — nunca é carregada pelo navegador. Detalhes do merge em [docs/DATA_PIPELINE.md](./docs/DATA_PIPELINE.md).
 
 ## Origem dos campos
 

@@ -1,0 +1,98 @@
+# Auditoria de nomenclatura — import do RENAME
+
+Documento objetivo com todas as inconsistências de nome de medicamento encontradas ao cruzar a planilha RENAME com o catálogo já existente (fonte: API `detecta-api`). Para cada item: como apareceu na planilha, como estava no catálogo, e o status atual.
+
+**Status**: seções A, B e C aplicadas em `scripts/rename_synonyms.json` (revisadas e confirmadas). Seção D (Ceftriazona) segue deliberadamente **não aplicada** por falta de confirmação documentada — ver critério na própria seção.
+
+## A. Já mesclado — sinônimo de sal/éster documentado (aplicado em `scripts/rename_synonyms.json`)
+
+Mesma substância ativa, a única diferença é a forma de sal/éster especificada (não muda a substância nem o perfil de interação).
+
+| Como está na planilha (RENAME) | Como estava na API | Status |
+|---|---|---|
+| ácido acetilsalicílico | AAS | mesclado (é a própria sigla) |
+| paracetamol | Acetaminofeno | mesclado (sinônimo INN) |
+| sulfato de salbutamol | Albuterol | mesclado — ver seção F sobre o nome em inglês |
+| cloridrato de amitriptilina | Amitriptilina | mesclado |
+| besilato / bensilato de anlodipino | Anlodipino | mesclado |
+| sulfato de atropina | Atropina | mesclado |
+| cloridrato de clorpromazina | Clorpromazina | mesclado |
+| maleato de dexclorfeniramina | Dexclorfeniramina | mesclado |
+| cloridrato de dobutamina | Dobutamina | mesclado |
+| cloridrato de dopamina | Dopamina | mesclado |
+| maleato de enalapril | Enalapril | mesclado |
+| cloridrato de fluoxetina | Fluoxetina | mesclado |
+| heparina sódica | Heparina | mesclado |
+| cloridrato de metoclopramida | Metoclopramida | mesclado |
+| cloridrato de ondansetrona | Ondansetrona | mesclado |
+| cloridrato de prometazina | Prometazina | mesclado |
+| cloridrato de propranolol | Propranolol | mesclado |
+| cloridrato de verapamil | Verapamil | mesclado |
+
+## B. Mesclado — variação de sal/éster de alta confiança, encontrada na segunda varredura
+
+Mesmo padrão da seção A (mesma substância, só sal/éster diferente), encontradas numa varredura mais profunda feita depois do primeiro import. Aplicado em `rename_synonyms.json`.
+
+| Como está na planilha (RENAME) | Como está hoje no catálogo (pós-import) | Recomendação |
+|---|---|---|
+| Acetato de hidrocortisona | Hidrocortisona | mesclar |
+| Benzoato de metronidazol | Metronidazol | mesclar |
+| Cloridrato de amiodarona / Cloridrato amiodarona / Cloridratro de amiodarona | Amiodarona | mesclar (as 3 grafias) |
+| Cloridrato de biperideno | Biperideno | mesclar |
+| Lactato de biperideno | Biperideno | mesclar (sal diferente do cloridrato, mesma base ativa) |
+| Cloridrato de lidocaína | Lidocaina | mesclar |
+| Fosfato sódico de prednisolona | Prednisolona | mesclar |
+| Succinato de metoprolol | Metoprolol | mesclar (succinato = liberação prolongada, mesmo fármaco) |
+| Tartarato de metoprolol | Metoprolol | mesclar (tartarato = liberação imediata, mesmo fármaco) |
+| Succinato sódico de hidrocortisona | Hidrocortisona | mesclar |
+
+## C. Mesclado — correção de erro de digitação (fonte: planilha RENAME ou catálogo original)
+
+Aqui a diferença não é de nomenclatura farmacológica, é erro de digitação. Confiança alta porque são nomes de fármacos muito conhecidos e a diferença é de 1-2 caracteres, sem ambiguidade com outro fármaco real.
+
+| Grafia com erro | Nome correto (já existe no catálogo) | Onde está o erro |
+|---|---|---|
+| Cabamazepina | Carbamazepina | planilha RENAME |
+| Clatitromicina | Claritromicina | planilha RENAME |
+| Clatritromicina | Claritromicina | planilha RENAME |
+| Digoxicina | Digoxina | planilha RENAME |
+| Fursemida | Furosemida | planilha RENAME |
+| Hidraclorotiazida | Hidroclorotiazida | planilha RENAME |
+| Dexametaxona | Dexametasona | planilha RENAME |
+| Cloridrato de propanolol | Propranolol | planilha RENAME |
+| Cloridrato de propanol | Propranolol | planilha RENAME |
+| Cloridrato de clorprimazina | Clorpromazina | planilha RENAME |
+| Cloridrato de amitrptilina | Amitriptilina | planilha RENAME |
+| Cloridrato d lidocaína | Lidocaina | planilha RENAME |
+| Diazepam. (com ponto sobrando) | Diazepam | planilha RENAME |
+| Monoitrato de isossorbida | — | **catálogo original (API)**: o nome correto é "Mononitrato de isossorbida" (falta um "n"). A planilha RENAME tem a grafia correta, foi o catálogo já existente que trouxe o erro. Mesclado mantendo o nome de exibição do catálogo original (com o erro) — corrigir a grafia exibida é uma limpeza cosmética separada, fora do escopo deste import. |
+
+## D. Caso incerto — mantido separado por falta de confirmação documentada
+
+| Grafia | Fonte | Observação |
+|---|---|---|
+| Ceftriazona | catálogo original (API) | grafia sem registro localizado |
+| Ceftriaxona | planilha RENAME | grafia correta, documentada na ANVISA |
+| Cefitriaxona | planilha RENAME | outra grafia, também sem registro localizado |
+
+Busquei "Ceftriazona" na ANVISA e na literatura e não encontrei nenhum registro de substância com esse nome — só resultados de "Ceftriaxona". O fato de existirem *duas* grafias diferentes divergindo de "Ceftriaxona" (a do catálogo e a "Cefitriaxona" da própria planilha) reforça que provavelmente são erro de digitação da mesma substância, mas isso continua sendo inferência minha, não confirmação documentada — por isso ficam como 3 entradas separadas no catálogo até alguém da farmácia confirmar.
+
+Nota trazida por vocês: cientificamente, "ceftriaxona sódica" e "ceftriaxona dissódica" são a mesma molécula estabilizada — isso confirma que variação de sal/forma farmacêutica da ceftriaxona não seria motivo de separar entradas, mas não resolve a dúvida específica sobre se "Ceftriazona" é erro de digitação ou outra coisa.
+
+## E. Falso positivo da varredura — NÃO é duplicata, nenhuma ação necessária
+
+| Nome 1 | Nome 2 | Por que não é duplicata |
+|---|---|---|
+| Norepinefrina | Epinefrina | São fármacos diferentes (noradrenalina x adrenalina) — mesma classe (catecolaminas), seletividade de receptor e uso clínico diferentes. O algoritmo de similaridade de texto aproximou os dois só por causa da substring comum "epinefrina"; mantidos como entradas separadas corretamente.
+
+## F. Nome em inglês mantido por decisão do time
+
+| Grafia | Fonte | Decisão |
+|---|---|---|
+| Albuterol | catálogo original (API), pré-existente | Nome padrão no Brasil/DCB seria "Salbutamol" (mesma substância, INN x USAN). Decisão: manter "Albuterol" como está — não é erro de dado, é preferência de nomenclatura já presente no catálogo original antes deste trabalho.
+
+## G. Duplicata pré-existente na própria API — fora de escopo, não alterada
+
+| Nome 1 | Nome 2 | Observação |
+|---|---|---|
+| Acetaminofeno | Paracetamol | Ambas já existiam como entradas separadas no catálogo original (`detecta-api`) **antes** de qualquer alteração deste trabalho — não foi introduzida pelo import do RENAME. O sinônimo `paracetamol -> Acetaminofeno` (seção A) só define para onde o dado *novo* do RENAME é direcionado; não mescla as duas entradas antigas entre si. Deduplicar essas duas ficaria fora do escopo do import do RENAME (mexeria em dado da fonte original, não da planilha).
