@@ -849,7 +849,7 @@ const ORGANS = [
         function showAutocomplete(query) {
             const q = query.toLocaleLowerCase('pt-BR');
             acItems = q.length < 1 ? [] :
-                DRUG_CATALOG.filter(d => d.name.toLocaleLowerCase('pt-BR').includes(q) && !state.drugs.includes(d.name)).slice(0, 8);
+                DRUG_CATALOG.filter(d => [d.name, ...(d.aliases || [])].some(name => name.toLocaleLowerCase('pt-BR').includes(q)) && !state.drugs.includes(d.name)).slice(0, 8);
             listbox.innerHTML = ''; acActiveIndex = -1;
             if (!acItems.length) { listbox.classList.remove('open'); input.setAttribute('aria-activedescendant', ''); return; }
             acItems.forEach((drug, i) => {

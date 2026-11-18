@@ -170,6 +170,15 @@ Fluxo recomendado:
 
 ## Tabela de sinônimos de nomes
 
+A publicacao aplica uma etapa final compartilhada de nomenclatura brasileira
+(`standardize_names` em `scripts/data_pipeline_common.py`). Ela corrige
+Acetaminofeno, Albuterol e Monoitrato de isossorbida, inclusive em snapshots
+antigos. A tabela abaixo ainda resolve os nomes de entrada do import;
+a etapa final define os nomes publicados. Evidencias e casos pendentes
+estao em `docs/RENAME_NAMING_AUDIT.md`.
+Execute `python3 -m unittest discover -s scripts -p 'test_*.py'` para testar
+preservacao de textos, severidade e idempotencia dessa etapa.
+
 `scripts/rename_synonyms.json` mapeia grafias do RENAME (DCB completo, forma de sal) para o nome já usado no catálogo do Prescribe-Guard, evitando entradas duplicadas do mesmo fármaco (ex.: `AAS` e `ácido acetilsalicílico` viram uma única entrada). A lista atual é deliberadamente conservadora: só inclui equivalências 1:1 de alta confiança. Casos ambíguos (mais de um sal presente no RENAME, ex. losartana sódica/potássica) ou produtos combinados (ex. sulfametoxazol + trimetoprima) foram deixados de fora de propósito.
 
 Essa tabela foi montada por comparação de nomenclatura farmacológica geral, não por alguém com formação clínica — recomenda-se revisão por alguém da área de farmácia/saúde antes de expandi-la ou de considerá-la definitiva. Uma fusão incorreta juntaria interações de dois fármacos diferentes sob o mesmo nome.

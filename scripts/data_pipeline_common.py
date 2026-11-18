@@ -9,6 +9,7 @@ tanto por `build_data.py` (fonte remota, API) quanto por `import_rename.py`
 from __future__ import annotations
 
 import re
+import json
 import sqlite3
 from pathlib import Path
 from typing import Any
@@ -231,8 +232,69 @@ def init_db(connection: sqlite3.Connection) -> None:
     _add_column_if_missing(connection, "medications", "atc_code", "atc_code TEXT NOT NULL DEFAULT ''")
 
 
+NAME_CORRECTIONS = {
+    'Acetaminofeno': 'Paracetamol',
+    'Albuterol': 'Salbutamol',
+    'Monoitrato de isossorbida': 'Mononitrato de isossorbida',
+}
+
+
+def standardize_names(connection: sqlite3.Connection) -> None:
+    """Apply reviewed names, keeping original rows for lossless auditing."""
+    def records(table):
+        cursor = connection.execute(f'SELECT * FROM {table}')
+        keys = [column[0] for column in cursor.description]
+        return [dict(zip(keys, row)) for row in cursor]
+
+    with connection:
+        connection.execute('CREATE TABLE IF NOT EXISTS naming_originals (kind TEXT, payload TEXT, UNIQUE(kind, payload))')
+        connection.execute('CREATE TABLE IF NOT EXISTS medication_aliases (alias TEXT PRIMARY KEY, name TEXT NOT NULL)')
+        meds = records('medications')
+        interactions = records('interactions')
+        for old, new in NAME_CORRECTIONS.items():
+            connection.execute('INSERT OR REPLACE INTO medication_aliases VALUES (?, ?)', (old, new))
+        for med in meds:
+            new = NAME_CORRECTIONS.get(med['name'], med['name'])
+            if new == med['name']:
+                continue
+            connection.execute('INSERT OR IGNORE INTO naming_originals VALUES (?, ?)', ('medication', json.dumps(med, sort_keys=True)))
+            target = connection.execute('SELECT id FROM medications WHERE name = ?', (new,)).fetchone()
+            if target:
+                for field in ('indications', 'drug_class', 'atc_code'):
+                    if field in med and med[field]:
+                        connection.execute(f"UPDATE medications SET {field} = ? WHERE id = ? AND {field} = ''", (med[field], target[0]))
+                connection.execute('DELETE FROM medications WHERE id = ?', (med['id'],))
+            else:
+                connection.execute('UPDATE medications SET name = ? WHERE id = ?', (new, med['id']))
+        ids = dict(connection.execute('SELECT name, id FROM medications'))
+        groups = {}
+        for row in interactions:
+            a, b = canonical_pair(*(NAME_CORRECTIONS.get(row[k], row[k]) for k in ('drug_a_name', 'drug_b_name')))
+            groups.setdefault((a, b), []).append(row)
+        for (a, b), group in groups.items():
+            if len(group) == 1 and (a, b) == (group[0]['drug_a_name'], group[0]['drug_b_name']):
+                continue
+            for row in group:
+                connection.execute('INSERT OR IGNORE INTO naming_originals VALUES (?, ?)', ('interaction', json.dumps(row, sort_keys=True)))
+                connection.execute('DELETE FROM interactions WHERE id = ?', (row['id'],))
+            if a == b:
+                continue
+            merged = dict(max(group, key=lambda r: SEVERITY_PRIORITY[r['severity']]))
+            merged.update(pair_key=f'{a.casefold()}||{b.casefold()}', drug_a_name=a, drug_b_name=b, drug_a_id=ids.get(a), drug_b_id=ids.get(b))
+            for field in ('action', 'mechanism', 'recommendation', 'source'):
+                merged[field] = '\n\n'.join(dict.fromkeys(r[field] for r in group if r[field]))
+            for field in ('effects_json', 'systems_json'):
+                merged[field] = json.dumps(sorted({v for r in group for v in json.loads(r[field])}))
+            columns = ', '.join(merged)
+            connection.execute(f'INSERT INTO interactions ({columns}) VALUES ({", ".join("?" for _ in merged)})', list(merged.values()))
+        for table in ('medications', 'interactions'):
+            count = connection.execute(f'SELECT COUNT(*) FROM {table}').fetchone()[0]
+            connection.execute('INSERT OR REPLACE INTO metadata VALUES (?, ?)', (f'{table}_count', str(count)))
+
+
 def publish_frontend_database(connection: sqlite3.Connection, public_db_path: Path) -> None:
     """Create a compact, self-contained SQLite artifact for static hosting."""
+    standardize_names(connection)
     public_db_path.parent.mkdir(parents=True, exist_ok=True)
     if public_db_path.exists():
         public_db_path.unlink()

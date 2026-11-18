@@ -93,7 +93,7 @@ async function initDatabase(dbUrl) {
 }
 
 function loadCatalog() {
-    return rows(
+    const catalog = rows(
         `
         SELECT
             name,
@@ -102,6 +102,8 @@ function loadCatalog() {
         ORDER BY name COLLATE NOCASE
         `
     );
+    const aliases = rows('SELECT alias, name FROM medication_aliases');
+    return catalog.map(drug => ({ ...drug, aliases: aliases.filter(a => a.name === drug.name).map(a => a.alias) }));
 }
 
 function findDrugByName(name) {
@@ -112,9 +114,10 @@ function findDrugByName(name) {
             COALESCE(NULLIF(drug_class, ''), 'Medicamento') AS class
         FROM medications
         WHERE name = ? COLLATE NOCASE
+           OR name IN (SELECT name FROM medication_aliases WHERE alias = ? COLLATE NOCASE)
         LIMIT 1
         `,
-        [name]
+        [name, name]
     );
     return match || null;
 }

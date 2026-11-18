@@ -1,5 +1,30 @@
 # Auditoria de nomenclatura — import do RENAME
 
+## Atualizacao de 2026-11-18 (substitui as decisoes historicas abaixo)
+
+O nome de exibicao passa a priorizar a nomenclatura brasileira de referencia.
+Acetaminofeno -> Paracetamol; Albuterol -> Salbutamol;
+Monoitrato de isossorbida -> Mononitrato de isossorbida.
+Ceftriazona e Cefitriaxona permanecem separadas: a grafia brasileira
+Ceftriaxona esta confirmada, mas a identidade dos registros divergentes
+precisa de confirmacao da origem ou revisao farmaceutica.
+
+Referencia: [RENAME 2024, segunda edicao, Ministerio da Saude](https://bvsms.saude.gov.br/bvs/publicacoes/relacao_nacional_medicamentos_2024_2ed.pdf).
+O documento lista paracetamol, ceftriaxona, mononitrato de isossorbida e
+sulfato de salbutamol. Salbutamol e o nome da base usado neste catalogo.
+A fusao experimental das grafias divergentes de ceftriaxona foi desfeita
+antes da publicacao: similaridade de escrita nao comprova equivalencia.
+
+Fontes oficiais adicionais consultadas:
+- [Anvisa, Manual DCB, ceftriaxona 01909](https://www.gov.br/anvisa/pt-br/assuntos/farmacopeia/dcb/arquivos/8140json-file-1).
+- [NLM/NIH, MeSH Albuterol D000420: Salbutamol como sinonimo](https://meshb.nlm.nih.gov/record/ui?ui=D000420).
+- [NLM/NIH, MeSH Acetaminophen D000082: Paracetamol como sinonimo](https://meshb.nlm.nih.gov/record/ui?dcmsLinks=true&ui=D000082).
+
+A normalizacao ocorre antes de cada publicacao, para ambas as fontes.
+Registros alterados ficam em naming_originals; grafias anteriores ficam em
+medication_aliases e podem ser pesquisadas. Colisoes de pares preservam textos,
+unem efeitos/sistemas e mantem a maior severidade. As secoes abaixo sao historicas.
+
 Documento objetivo com todas as inconsistências de nome de medicamento encontradas ao cruzar a planilha RENAME com o catálogo já existente (fonte: API `detecta-api`). Para cada item: como apareceu na planilha, como estava no catálogo, e o status atual.
 
 **Status**: seções A, B e C aplicadas em `scripts/rename_synonyms.json` (revisadas e confirmadas). Seção D (Ceftriazona) segue deliberadamente **não aplicada** por falta de confirmação documentada — ver critério na própria seção.
