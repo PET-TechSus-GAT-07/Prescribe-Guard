@@ -18,7 +18,7 @@ class NamingTests(unittest.TestCase):
         self.assertEqual(row[0], 'major')
         self.assertIn('origem A', row[1])
         self.assertIn('origem B', row[1])
-        self.assertEqual(db.execute('SELECT count(*) FROM medications').fetchone()[0], 4)
+        self.assertEqual(db.execute('SELECT count(*) FROM medications').fetchone()[0], 3)
         before = list(db.iterdump())
         standardize_names(db)
         self.assertEqual(before, list(db.iterdump()))

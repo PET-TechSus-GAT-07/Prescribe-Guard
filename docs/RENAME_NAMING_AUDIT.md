@@ -5,15 +5,20 @@
 O nome de exibicao passa a priorizar a nomenclatura brasileira de referencia.
 Acetaminofeno -> Paracetamol; Albuterol -> Salbutamol;
 Monoitrato de isossorbida -> Mononitrato de isossorbida.
-Ceftriazona e Cefitriaxona permanecem separadas: a grafia brasileira
-Ceftriaxona esta confirmada, mas a identidade dos registros divergentes
-precisa de confirmacao da origem ou revisao farmaceutica.
+Ceftriazona e Cefitriaxona -> Ceftriaxona. Revisao dos registros confirmou
+que o primeiro cita explicitamente ceftriaxona no mecanismo e recomendacao;
+o segundo duplica o par com Etinilestradiol + levonorgestrel, com os mesmos
+textos ja presentes sob Ceftriaxona. A correcao usa esse contexto, alem da DCB.
 
 Referencia: [RENAME 2024, segunda edicao, Ministerio da Saude](https://bvsms.saude.gov.br/bvs/publicacoes/relacao_nacional_medicamentos_2024_2ed.pdf).
 O documento lista paracetamol, ceftriaxona, mononitrato de isossorbida e
 sulfato de salbutamol. Salbutamol e o nome da base usado neste catalogo.
-A fusao experimental das grafias divergentes de ceftriaxona foi desfeita
-antes da publicacao: similaridade de escrita nao comprova equivalencia.
+A separacao anterior foi superada pela verificacao do conteudo dos registros.
+Fonte primaria adicional: https://imses.crfmg.org.br/medicamento.php?medicamento=Ceftriazona
+
+Pendencia de conteudo independente da nomenclatura: o par Ceftriaxona /
+Varfarina sodica importado da planilha contem mecanismo e recomendacao sobre
+aspirina. Requer revisao da fonte; o texto nao foi corrigido por suposicao.
 
 Fontes oficiais adicionais consultadas:
 - [Anvisa, Manual DCB, ceftriaxona 01909](https://www.gov.br/anvisa/pt-br/assuntos/farmacopeia/dcb/arquivos/8140json-file-1).

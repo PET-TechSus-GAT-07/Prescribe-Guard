@@ -233,6 +233,8 @@ def init_db(connection: sqlite3.Connection) -> None:
 
 
 NAME_CORRECTIONS = {
+    'Ceftriazona': 'Ceftriaxona',
+    'Cefitriaxona': 'Ceftriaxona',
     'Acetaminofeno': 'Paracetamol',
     'Albuterol': 'Salbutamol',
     'Monoitrato de isossorbida': 'Mononitrato de isossorbida',
